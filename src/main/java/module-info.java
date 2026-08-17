@@ -3,6 +3,7 @@ module com.example.intranet_adm {
     requires javafx.fxml;
     requires java.net.http;
     requires java.prefs;
+    requires java.desktop;
 
     opens com.example.intranet_adm to javafx.fxml;
     opens com.example.intranet_adm.model to javafx.base;

@@ -1,3 +1,9 @@
+/// Olá! Este arquivo concentra o gerenciamento dos avisos.
+/// Ele é responsável por adicionar, listar e remover avisos.
+/// Ele utiliza o modelo Aviso e o armazenamento local.
+/// Alterações na estrutura dos avisos ou no armazenamento podem afetar este arquivo. =)
+
+
 package com.example.intranet_adm.service;
 
 import com.example.intranet_adm.model.Aviso;
@@ -14,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Histórico local dos avisos efetivamente enviados pela Central. */
 public class AvisoService {
     private static final Path DEFAULT_STORAGE = defaultStorage();
 
