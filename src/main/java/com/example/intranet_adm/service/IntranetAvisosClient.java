@@ -111,6 +111,11 @@ public class IntranetAvisosClient {
 
     // ============================================================
     // CLASSE DE CONFIGURAÇÃO (Builder Pattern)
+    //
+    // Reflete apenas os campos que o formulário "Novo Aviso" da
+    // Central de Avisos envia hoje. Modelo, Tamanho, Ícone,
+    // Mostrar datas, cores e Páginas foram removidos da tela e,
+    // por isso, também não fazem mais parte do envio.
     // ============================================================
 
     public static class AvisoConfig {
@@ -121,17 +126,7 @@ public class IntranetAvisosClient {
         private Path imagem = null;
         private LocalDateTime publicarEm = null;
         private LocalDateTime expirarEm = null;
-        private String modelo = "Problema";
-        private String tamanho = "Médio";
-        private String icone = "❕";
-        private boolean mostrarDatas = false;
-        private String corFundo = "0xffffffff";
-        private String corTexto = "0x20242aff";
-        private String corDestaque = "0xf0b90bff";
         private boolean ativo = true;
-        private boolean paginaCentral = true;
-        private boolean paginaLogin = true;
-        private boolean paginaHelpdesk = true;
         private boolean podeFechar = true;
 
         public AvisoConfig(String titulo, String mensagem) {
@@ -170,50 +165,8 @@ public class IntranetAvisosClient {
             return this;
         }
 
-        public AvisoConfig comModelo(String modelo) {
-            if (modelo != null && !modelo.isBlank()) this.modelo = modelo;
-            return this;
-        }
-
-        public AvisoConfig comTamanho(String tamanho) {
-            if (tamanho != null && !tamanho.isBlank()) this.tamanho = tamanho;
-            return this;
-        }
-
-        public AvisoConfig comIcone(String icone) {
-            if (icone != null && !icone.isBlank()) this.icone = icone;
-            return this;
-        }
-
-        public AvisoConfig comMostrarDatas(boolean mostrarDatas) {
-            this.mostrarDatas = mostrarDatas;
-            return this;
-        }
-
-        public AvisoConfig comCorFundo(String corFundo) {
-            if (corFundo != null && !corFundo.isBlank()) this.corFundo = corFundo;
-            return this;
-        }
-
-        public AvisoConfig comCorTexto(String corTexto) {
-            if (corTexto != null && !corTexto.isBlank()) this.corTexto = corTexto;
-            return this;
-        }
-
-        public AvisoConfig comCorDestaque(String corDestaque) {
-            if (corDestaque != null && !corDestaque.isBlank()) this.corDestaque = corDestaque;
-            return this;
-        }
-
         public AvisoConfig comAtivo(boolean ativo) {
             this.ativo = ativo;
-            return this;
-        }
-
-        public AvisoConfig comPaginas(boolean central, boolean login, boolean helpdesk) {
-            this.paginaCentral = central;
-            this.paginaLogin = login;
-            this.paginaHelpdesk = helpdesk;
             return this;
         }
 
@@ -230,17 +183,7 @@ public class IntranetAvisosClient {
         public Path getImagem() { return imagem; }
         public LocalDateTime getPublicarEm() { return publicarEm; }
         public LocalDateTime getExpirarEm() { return expirarEm; }
-        public String getModelo() { return modelo; }
-        public String getTamanho() { return tamanho; }
-        public String getIcone() { return icone; }
-        public boolean isMostrarDatas() { return mostrarDatas; }
-        public String getCorFundo() { return corFundo; }
-        public String getCorTexto() { return corTexto; }
-        public String getCorDestaque() { return corDestaque; }
         public boolean isAtivo() { return ativo; }
-        public boolean isPaginaCentral() { return paginaCentral; }
-        public boolean isPaginaLogin() { return paginaLogin; }
-        public boolean isPaginaHelpdesk() { return paginaHelpdesk; }
         public boolean isPodeFechar() { return podeFechar; }
     }
 
@@ -270,17 +213,7 @@ public class IntranetAvisosClient {
             appendJsonField(json, "expirationDate", config.getExpirarEm().format(ISO_LOCAL_DATE_TIME), false);
         }
 
-        appendJsonField(json, "model", config.getModelo(), false);
-        appendJsonField(json, "size", config.getTamanho(), false);
-        appendJsonField(json, "icon", config.getIcone(), false);
-        appendJsonBooleanField(json, "showDates", config.isMostrarDatas(), false);
-        appendJsonField(json, "backgroundColor", config.getCorFundo(), false);
-        appendJsonField(json, "textColor", config.getCorTexto(), false);
-        appendJsonField(json, "highlightColor", config.getCorDestaque(), false);
         appendJsonBooleanField(json, "active", config.isAtivo(), false);
-        appendJsonBooleanField(json, "pageCentral", config.isPaginaCentral(), false);
-        appendJsonBooleanField(json, "pageLogin", config.isPaginaLogin(), false);
-        appendJsonBooleanField(json, "pageHelpdesk", config.isPaginaHelpdesk(), false);
         appendJsonBooleanField(json, "closable", config.isPodeFechar(), false);
 
         if (config.getImagem() != null) {
@@ -611,6 +544,10 @@ public class IntranetAvisosClient {
                 }
             }
 
+            // Modelo, tamanho e páginas não são mais definidos ao criar um
+            // aviso novo, mas popups antigos gravados no servidor ainda
+            // podem trazer esses campos — mantemos a leitura aqui apenas
+            // para exibição no histórico/lista de popups existentes.
             String modelo = extrairCampoTexto(objeto, "model");
             if (modelo == null) modelo = extrairCampoTexto(objeto, "modelo");
             if (modelo == null) modelo = "Popup";
@@ -620,20 +557,6 @@ public class IntranetAvisosClient {
             if (tamanho == null) tamanho = "Médio";
 
             StringBuilder paginas = new StringBuilder();
-            if (extrairCampoBoolean(objeto, "pageCentral", false) ||
-                    extrairCampoBoolean(objeto, "central", false)) {
-                paginas.append("Central");
-            }
-            if (extrairCampoBoolean(objeto, "pageLogin", false) ||
-                    extrairCampoBoolean(objeto, "login", false)) {
-                if (!paginas.isEmpty()) paginas.append(", ");
-                paginas.append("Login");
-            }
-            if (extrairCampoBoolean(objeto, "pageHelpdesk", false) ||
-                    extrairCampoBoolean(objeto, "helpdesk", false)) {
-                if (!paginas.isEmpty()) paginas.append(", ");
-                paginas.append("Helpdesk");
-            }
             if (paginas.isEmpty()) paginas.append("Nenhuma");
 
             return new Popup(
@@ -656,7 +579,7 @@ public class IntranetAvisosClient {
     // ESTATÍSTICAS
     // ============================================================
 
-    
+
     public record EstatisticasAcesso(int onlineAgora, int acessosHoje, int totalVisitantes, String ultimaConexao) {}
 
     public EstatisticasAcesso buscarEstatisticasAcesso() throws IOException, InterruptedException {

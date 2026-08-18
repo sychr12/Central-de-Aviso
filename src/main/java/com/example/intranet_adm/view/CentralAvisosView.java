@@ -22,7 +22,6 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -89,20 +88,8 @@ public final class CentralAvisosView {
 
     private TextArea descricaoArea;
 
-    private ComboBox<String> modeloCombo;
-    private ComboBox<String> tamanhoCombo;
-    private ComboBox<String> iconeCombo;
-    private ComboBox<String> mostrarDatasCombo;
     private ComboBox<String> ativoCombo;
     private ComboBox<String> podeFecharCombo;
-
-    private ColorPicker corFundoPicker;
-    private ColorPicker corTextoPicker;
-    private ColorPicker corDestaquePicker;
-
-    private CheckBox paginaCentralCheck;
-    private CheckBox paginaLoginCheck;
-    private CheckBox paginaHelpdeskCheck;
 
     private TextArea mensagemArea;
 
@@ -469,8 +456,6 @@ public final class CentralAvisosView {
 
         adicionarCamposBasicos(grid);
 
-        adicionarCustomizacao(grid);
-
         adicionarCampoImagem(grid);
 
         adicionarCampoLink(grid);
@@ -568,17 +553,12 @@ public final class CentralAvisosView {
 
         tituloField =
                 new TextField(
-                        "Alerta de Instabilidade de Internet"
+                        "Digite o titulo"
                 );
 
         descricaoArea =
                 new TextArea(
-                        "⚠ Alerta de Instabilidade de Internet\n\n" +
-                                "Informamos que estamos enfrentando instabilidades no acesso à internet, " +
-                                "o que pode ocasionar lentidão ou interrupções temporárias em sistemas e serviços " +
-                                "que dependem de conexão externa.\n\n" +
-                                "Nossa equipe técnica já está atuando para identificar e solucionar a ocorrência " +
-                                "o mais breve possível."
+                        "Digite o que quer anunciar"
                 );
 
         descricaoArea.setPrefRowCount(6);
@@ -587,56 +567,6 @@ public final class CentralAvisosView {
 
         mensagemArea =
                 descricaoArea;
-
-        modeloCombo =
-                new ComboBox<>();
-
-        modeloCombo.getItems().addAll(
-                "Problema",
-                "Informativo",
-                "Sucesso",
-                "Manutenção"
-        );
-
-        modeloCombo.getSelectionModel()
-                .select("Problema");
-
-        tamanhoCombo =
-                new ComboBox<>();
-
-        tamanhoCombo.getItems().addAll(
-                "Pequeno",
-                "Médio",
-                "Grande"
-        );
-
-        tamanhoCombo.getSelectionModel()
-                .select("Médio");
-
-        iconeCombo =
-                new ComboBox<>();
-
-        iconeCombo.getItems().addAll(
-                "Sem ícone",
-                "⚙ Configuração",
-                "ⓘ Informação",
-                "⚠ Alerta",
-                "❕ Problema"
-        );
-
-        iconeCombo.getSelectionModel()
-                .select("❕ Problema");
-
-        mostrarDatasCombo =
-                new ComboBox<>();
-
-        mostrarDatasCombo.getItems().addAll(
-                "Sim",
-                "Não"
-        );
-
-        mostrarDatasCombo.getSelectionModel()
-                .select("Não");
 
         ativoCombo =
                 new ComboBox<>();
@@ -672,42 +602,6 @@ public final class CentralAvisosView {
         prioridadeCombo.getSelectionModel()
                 .select(0);
 
-        corFundoPicker =
-                new ColorPicker(
-                        Color.WHITE
-                );
-
-        corTextoPicker =
-                new ColorPicker(
-                        Color.web("#20242A")
-                );
-
-        corDestaquePicker =
-                new ColorPicker(
-                        Color.web("#F0B90B")
-                );
-
-        paginaCentralCheck =
-                new CheckBox(
-                        "Página central"
-                );
-
-        paginaLoginCheck =
-                new CheckBox(
-                        "Página de login"
-                );
-
-        paginaHelpdeskCheck =
-                new CheckBox(
-                        "Página de helpdesk"
-                );
-
-        paginaCentralCheck.setSelected(true);
-
-        paginaLoginCheck.setSelected(true);
-
-        paginaHelpdeskCheck.setSelected(true);
-
         linkIntranetField =
                 new TextField(
                         "https://intranet.empresa.com/comunicados/manutencao"
@@ -733,27 +627,15 @@ public final class CentralAvisosView {
                 );
 
         grid.add(
-                criarLabel("Modelo"),
-                0,
-                row
-        );
-
-        grid.add(
                 criarLabel("Ativo"),
-                1,
-                row
-        );
-
-        grid.add(
-                modeloCombo,
                 0,
-                ++row
+                row
         );
 
         grid.add(
                 ativoCombo,
-                1,
-                row
+                0,
+                ++row
         );
 
         grid.add(
@@ -894,36 +776,6 @@ public final class CentralAvisosView {
 
         grid.add(
                 criarLabel(
-                        "Mostrar nas páginas"
-                ),
-                0,
-                ++row,
-                2,
-                1
-        );
-
-        HBox paginas =
-                new HBox(
-                        18,
-                        paginaCentralCheck,
-                        paginaLoginCheck,
-                        paginaHelpdeskCheck
-                );
-
-        paginas.setAlignment(
-                Pos.CENTER_LEFT
-        );
-
-        grid.add(
-                paginas,
-                0,
-                ++row,
-                2,
-                1
-        );
-
-        grid.add(
-                criarLabel(
                         "Alerta pode ser fechado"
                 ),
                 0,
@@ -934,132 +786,6 @@ public final class CentralAvisosView {
                 podeFecharCombo,
                 0,
                 ++row
-        );
-    }
-
-    // ============================================================
-    // CUSTOMIZAÇÃO
-    // ============================================================
-
-    private void adicionarCustomizacao(
-            GridPane grid) {
-
-        int row =
-                grid.getRowCount();
-
-        Separator separator =
-                new Separator();
-
-        grid.add(
-                separator,
-                0,
-                row++,
-                2,
-                1
-        );
-
-        grid.add(
-                criarLabel(
-                        "CUSTOMIZAÇÃO"
-                ),
-                0,
-                row++,
-                2,
-                1
-        );
-
-        GridPane custom =
-                new GridPane();
-
-        custom.setHgap(16);
-
-        custom.setVgap(10);
-
-        custom.getColumnConstraints()
-                .addAll(
-                        criarColuna(33),
-                        criarColuna(33),
-                        criarColuna(34)
-                );
-
-        custom.add(
-                criarLabel("Tamanho"),
-                0,
-                0
-        );
-
-        custom.add(
-                criarLabel("Ícone"),
-                1,
-                0
-        );
-
-        custom.add(
-                criarLabel("Mostrar datas"),
-                2,
-                0
-        );
-
-        custom.add(
-                tamanhoCombo,
-                0,
-                1
-        );
-
-        custom.add(
-                iconeCombo,
-                1,
-                1
-        );
-
-        custom.add(
-                mostrarDatasCombo,
-                2,
-                1
-        );
-
-        custom.add(
-                criarLabel("Cor de fundo"),
-                0,
-                2
-        );
-
-        custom.add(
-                criarLabel("Cor do texto"),
-                1,
-                2
-        );
-
-        custom.add(
-                criarLabel("Cor de destaque"),
-                2,
-                2
-        );
-
-        custom.add(
-                corFundoPicker,
-                0,
-                3
-        );
-
-        custom.add(
-                corTextoPicker,
-                1,
-                3
-        );
-
-        custom.add(
-                corDestaquePicker,
-                2,
-                3
-        );
-
-        grid.add(
-                custom,
-                0,
-                row,
-                2,
-                1
         );
     }
 
@@ -1536,21 +1262,6 @@ public final class CentralAvisosView {
         String nivel =
                 determinarPrioridade();
 
-        String corFundo =
-                colorToHex(
-                        corFundoPicker.getValue()
-                );
-
-        String corTexto =
-                colorToHex(
-                        corTextoPicker.getValue()
-                );
-
-        String corDestaque =
-                colorToHex(
-                        corDestaquePicker.getValue()
-                );
-
         LocalDateTime publicarEm =
                 obterDataPublicacao();
 
@@ -1562,24 +1273,10 @@ public final class CentralAvisosView {
                         ativoCombo.getValue()
                 );
 
-        boolean mostrarDatas =
-                "Sim".equals(
-                        mostrarDatasCombo.getValue()
-                );
-
         boolean podeFechar =
                 "Sim".equals(
                         podeFecharCombo.getValue()
                 );
-
-        boolean paginaCentral =
-                paginaCentralCheck.isSelected();
-
-        boolean paginaLogin =
-                paginaLoginCheck.isSelected();
-
-        boolean paginaHelpdesk =
-                paginaHelpdeskCheck.isSelected();
 
         enviarButton.setDisable(true);
 
@@ -1608,36 +1305,8 @@ public final class CentralAvisosView {
                                         .comExpirarEm(
                                                 expirarEm
                                         )
-                                        .comModelo(
-                                                modeloCombo.getValue()
-                                        )
-                                        .comTamanho(
-                                                tamanhoCombo.getValue()
-                                        )
-                                        .comIcone(
-                                                obterIconeReal(
-                                                        iconeCombo.getValue()
-                                                )
-                                        )
-                                        .comMostrarDatas(
-                                                mostrarDatas
-                                        )
-                                        .comCorFundo(
-                                                corFundo
-                                        )
-                                        .comCorTexto(
-                                                corTexto
-                                        )
-                                        .comCorDestaque(
-                                                corDestaque
-                                        )
                                         .comAtivo(
                                                 ativo
-                                        )
-                                        .comPaginas(
-                                                paginaCentral,
-                                                paginaLogin,
-                                                paginaHelpdesk
                                         )
                                         .comPodeFechar(
                                                 podeFechar
@@ -1709,56 +1378,6 @@ public final class CentralAvisosView {
         }
 
         return "normal";
-    }
-
-    // ============================================================
-    // COR
-    // ============================================================
-
-    private String colorToHex(
-            Color color) {
-
-        if (color == null) {
-            return "0xffffffff";
-        }
-
-        return String.format(
-                "0x%02x%02x%02x%02x",
-                (int) (color.getRed() * 255),
-                (int) (color.getGreen() * 255),
-                (int) (color.getBlue() * 255),
-                (int) (color.getOpacity() * 255)
-        );
-    }
-
-    // ============================================================
-    // ÍCONE
-    // ============================================================
-
-    private String obterIconeReal(
-            String valor) {
-
-        if (valor == null) {
-            return "❕";
-        }
-
-        if (valor.contains("⚙")) {
-            return "⚙";
-        }
-
-        if (valor.contains("ⓘ")) {
-            return "ⓘ";
-        }
-
-        if (valor.contains("⚠")) {
-            return "⚠";
-        }
-
-        if (valor.contains("❕")) {
-            return "❕";
-        }
-
-        return "❕";
     }
 
     // ============================================================
@@ -1834,14 +1453,6 @@ public final class CentralAvisosView {
                 new Insets(24)
         );
 
-        box.setStyle(
-                "-fx-background-color: " +
-                        corFundoPicker
-                                .getValue()
-                                .toString() +
-                        ";"
-        );
-
         HBox header =
                 new HBox(10);
 
@@ -1850,38 +1461,10 @@ public final class CentralAvisosView {
         );
 
         Label icon =
-                new Label(
-                        obterIconeReal(
-                                iconeCombo.getValue()
-                        )
-                );
+                new Label("❕");
 
         icon.getStyleClass()
                 .add("popup-icon");
-
-        icon.setStyle(
-                "-fx-text-fill: " +
-                        corDestaquePicker
-                                .getValue()
-                                .toString() +
-                        ";"
-        );
-
-        VBox texts =
-                new VBox(4);
-
-        Label modelo =
-                new Label(
-                        modeloCombo.getValue()
-                );
-
-        modelo.setStyle(
-                "-fx-text-fill: " +
-                        corDestaquePicker
-                                .getValue()
-                                .toString() +
-                        "; -fx-font-weight: bold;"
-        );
 
         Label titulo =
                 new Label(
@@ -1891,24 +1474,10 @@ public final class CentralAvisosView {
         titulo.getStyleClass()
                 .add("popup-title");
 
-        titulo.setStyle(
-                "-fx-text-fill: " +
-                        corTextoPicker
-                                .getValue()
-                                .toString() +
-                        ";"
-        );
-
-        texts.getChildren()
-                .addAll(
-                        modelo,
-                        titulo
-                );
-
         header.getChildren()
                 .addAll(
                         icon,
-                        texts
+                        titulo
                 );
 
         Label mensagem =
@@ -1920,14 +1489,6 @@ public final class CentralAvisosView {
 
         mensagem.setMaxWidth(
                 Double.MAX_VALUE
-        );
-
-        mensagem.setStyle(
-                "-fx-text-fill: " +
-                        corTextoPicker
-                                .getValue()
-                                .toString() +
-                        ";"
         );
 
         box.getChildren()
@@ -1954,64 +1515,6 @@ public final class CentralAvisosView {
 
         box.getChildren()
                 .add(mensagem);
-
-        if (
-                "Sim".equals(
-                        mostrarDatasCombo.getValue()
-                )
-        ) {
-
-            String inicio =
-                    publicarDataPicker
-                            .getValue() == null
-                            ? "—"
-                            :
-                            publicarDataPicker
-                                    .getValue()
-                                    .format(
-                                            FORMATO_DATA
-                                    ) +
-                                    " " +
-                                    publicarHoraField
-                                            .getText();
-
-            String fim =
-                    expirarDataPicker
-                            .getValue() == null
-                            ? "—"
-                            :
-                            expirarDataPicker
-                                    .getValue()
-                                    .format(
-                                            FORMATO_DATA
-                                    ) +
-                                    " " +
-                                    expirarHoraField
-                                            .getText();
-
-            Label datas =
-                    new Label(
-                            "Visível de " +
-                                    inicio +
-                                    (
-                                            expirarDataPicker
-                                                    .getValue() == null
-                                                    ? ""
-                                                    : " até " + fim
-                                    )
-                    );
-
-            datas.setStyle(
-                    "-fx-text-fill: " +
-                            corTextoPicker
-                                    .getValue()
-                                    .toString() +
-                            "; -fx-opacity: 0.75;"
-            );
-
-            box.getChildren()
-                    .add(datas);
-        }
 
         if (
                 "Sim".equals(
@@ -2044,13 +1547,8 @@ public final class CentralAvisosView {
                             "Este alerta não pode ser fechado pelo usuário."
                     );
 
-            aviso.setStyle(
-                    "-fx-text-fill: " +
-                            corDestaquePicker
-                                    .getValue()
-                                    .toString() +
-                            "; -fx-font-weight: bold;"
-            );
+            aviso.getStyleClass()
+                    .add("muted");
 
             box.getChildren()
                     .add(aviso);
@@ -2067,41 +1565,7 @@ public final class CentralAvisosView {
                         ? 460
                         : 340;
 
-        if (
-                "Grande".equals(
-                        tamanhoCombo.getValue()
-                )
-        ) {
-
-            height =
-                    imagemSelecionadaPath != null
-                            ? 560
-                            : 420;
-        }
-
-        if (
-                "Pequeno".equals(
-                        tamanhoCombo.getValue()
-                )
-        ) {
-
-            height =
-                    imagemSelecionadaPath != null
-                            ? 400
-                            : 300;
-        }
-
-        int width =
-                "Grande".equals(
-                        tamanhoCombo.getValue()
-                )
-                        ? 560
-                        :
-                        "Pequeno".equals(
-                                tamanhoCombo.getValue()
-                        )
-                                ? 360
-                                : 460;
+        int width = 460;
 
         Scene scene =
                 new Scene(
