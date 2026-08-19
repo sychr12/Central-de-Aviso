@@ -109,6 +109,10 @@ public final class CentralAvisosView {
     // DATAS
     // ============================================================
 
+    private CheckBox agendarDataCheck;
+
+    private VBox datasContainer;
+
     private DatePicker publicarDataPicker;
 
     private TextField publicarHoraField;
@@ -697,6 +701,16 @@ public final class CentralAvisosView {
         int row =
                 rowInicial + 1;
 
+        agendarDataCheck =
+                new CheckBox(
+                        "Agendar data de publicação/expiração"
+                );
+
+        agendarDataCheck.setSelected(false);
+
+        agendarDataCheck.getStyleClass()
+                .add("central-label");
+
         publicarDataPicker =
                 criarDatePicker(
                         LocalDate.now()
@@ -766,8 +780,49 @@ public final class CentralAvisosView {
         dates.getStyleClass()
                 .add("dates-row");
 
+        Label agendarAjuda =
+                new Label(
+                        "Desmarcado: o aviso é publicado imediatamente " +
+                                "e não expira sozinho."
+                );
+
+        agendarAjuda.getStyleClass()
+                .add("muted");
+
+        datasContainer =
+                new VBox(
+                        10,
+                        dates
+                );
+
+        datasContainer.setVisible(false);
+
+        datasContainer.setManaged(false);
+
+        agendarDataCheck.selectedProperty()
+                .addListener(
+                        (obs, antigo, marcado) -> {
+
+                            datasContainer.setVisible(
+                                    marcado
+                            );
+
+                            datasContainer.setManaged(
+                                    marcado
+                            );
+                        }
+                );
+
+        VBox agendarBox =
+                new VBox(
+                        6,
+                        agendarDataCheck,
+                        agendarAjuda,
+                        datasContainer
+                );
+
         grid.add(
-                dates,
+                agendarBox,
                 0,
                 row,
                 2,
@@ -1165,6 +1220,13 @@ public final class CentralAvisosView {
 
     private LocalDateTime obterDataPublicacao() {
 
+        if (
+                agendarDataCheck == null ||
+                        !agendarDataCheck.isSelected()
+        ) {
+            return LocalDateTime.now();
+        }
+
         LocalDate data =
                 publicarDataPicker.getValue();
 
@@ -1197,6 +1259,13 @@ public final class CentralAvisosView {
     }
 
     private LocalDateTime obterDataExpiracao() {
+
+        if (
+                agendarDataCheck == null ||
+                        !agendarDataCheck.isSelected()
+        ) {
+            return null;
+        }
 
         LocalDate data =
                 expirarDataPicker.getValue();
