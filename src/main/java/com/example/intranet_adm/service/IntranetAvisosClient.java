@@ -14,7 +14,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -533,15 +535,8 @@ public class IntranetAvisosClient {
             }
 
             String expirationDate = extrairCampoTexto(objeto, "expirationDate");
-            if (expirationDate != null) {
-                try {
-                    java.time.Instant instant = java.time.Instant.parse(expirationDate);
-                    if (java.time.Instant.now().isAfter(instant)) {
-                        ativo = false;
-                    }
-                } catch (Exception e) {
-                    // Ignora erro de parsing
-                }
+            if (expirationDate != null && expirada(expirationDate)) {
+                ativo = false;
             }
 
             // Modelo, tamanho e páginas não são mais definidos ao criar um
@@ -556,8 +551,9 @@ public class IntranetAvisosClient {
             if (tamanho == null) tamanho = extrairCampoTexto(objeto, "tamanho");
             if (tamanho == null) tamanho = "Médio";
 
-            StringBuilder paginas = new StringBuilder();
-            if (paginas.isEmpty()) paginas.append("Nenhuma");
+            String paginas = extrairCampoTexto(objeto, "pages");
+            if (paginas == null) paginas = extrairCampoTexto(objeto, "paginas");
+            if (paginas == null || paginas.isBlank()) paginas = "Nenhuma";
 
             return new Popup(
                     id,
@@ -566,12 +562,33 @@ public class IntranetAvisosClient {
                     ativo,
                     modelo,
                     tamanho,
-                    paginas.toString()
+                    paginas
             );
         } catch (Exception e) {
             System.err.println("Erro ao parsear objeto: " + objeto);
             e.printStackTrace();
             return null;
+        }
+    }
+
+    private static boolean expirada(String data) {
+        try {
+            return Instant.now().isAfter(Instant.parse(data));
+        } catch (Exception ignored) {
+            // O formulário envia LocalDateTime (sem fuso); APIs externas podem
+            // responder com OffsetDateTime. Aceitamos os dois formatos.
+        }
+
+        try {
+            return Instant.now().isAfter(OffsetDateTime.parse(data).toInstant());
+        } catch (Exception ignored) {
+            // Tenta o formato local abaixo.
+        }
+
+        try {
+            return LocalDateTime.now().isAfter(LocalDateTime.parse(data));
+        } catch (Exception ignored) {
+            return false;
         }
     }
 

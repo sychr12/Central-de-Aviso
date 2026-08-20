@@ -11,6 +11,7 @@ import com.example.intranet_adm.service.IntranetAvisosClient;
 import com.example.intranet_adm.util.DailyMessages;
 
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -22,10 +23,17 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+
+import io.github.palexdev.materialfx.controls.MFXButton;
+import io.github.palexdev.materialfx.controls.MFXCheckbox;
+import io.github.palexdev.materialfx.controls.MFXDatePicker;
+import io.github.palexdev.materialfx.controls.MFXScrollPane;
+import io.github.palexdev.materialfx.controls.MFXTextField;
 
 import java.io.File;
 import java.net.URI;
@@ -36,15 +44,12 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 public final class CentralAvisosView {
-
-    // ============================================================
-    // CONFIGURAÇÕES
-    // ============================================================
 
     private static final int SIDEBAR_WIDTH = 230;
     private static final int CARD_SPACING = 16;
@@ -63,16 +68,8 @@ public final class CentralAvisosView {
     private static final DateTimeFormatter FORMATO_DATA =
             DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    // ============================================================
-    // SERVIÇOS
-    // ============================================================
-
     private final AvisoService service =
             new AvisoService();
-
-    // ============================================================
-    // LAYOUT PRINCIPAL
-    // ============================================================
 
     private final BorderPane root =
             new BorderPane();
@@ -80,11 +77,10 @@ public final class CentralAvisosView {
     private final VBox content =
             new VBox(CARD_SPACING);
 
-    // ============================================================
-    // CAMPOS DO FORMULÁRIO
-    // ============================================================
+    private final List<MFXButton> botoesNavegacao =
+            new ArrayList<>();
 
-    private TextField tituloField;
+    private MFXTextField tituloField;
 
     private TextArea descricaoArea;
 
@@ -95,35 +91,23 @@ public final class CentralAvisosView {
 
     private ComboBox<String> prioridadeCombo;
 
-    private TextField linkIntranetField;
-
-    // ============================================================
-    // FEEDBACK
-    // ============================================================
+    private MFXTextField linkIntranetField;
 
     private Label feedbackLabel;
 
-    private Button enviarButton;
+    private MFXButton enviarButton;
 
-    // ============================================================
-    // DATAS
-    // ============================================================
-
-    private CheckBox agendarDataCheck;
+    private MFXCheckbox agendarDataCheck;
 
     private VBox datasContainer;
 
-    private DatePicker publicarDataPicker;
+    private MFXDatePicker publicarDataPicker;
 
-    private TextField publicarHoraField;
+    private MFXTextField publicarHoraField;
 
-    private DatePicker expirarDataPicker;
+    private MFXDatePicker expirarDataPicker;
 
-    private TextField expirarHoraField;
-
-    // ============================================================
-    // IMAGEM
-    // ============================================================
+    private MFXTextField expirarHoraField;
 
     private Path imagemSelecionadaPath;
 
@@ -131,11 +115,7 @@ public final class CentralAvisosView {
 
     private ImageView imagemPreview;
 
-    private Button removerImagemButton;
-
-    // ============================================================
-    // MONITOR
-    // ============================================================
+    private MFXButton removerImagemButton;
 
     private Timeline monitorTimeline;
 
@@ -148,10 +128,6 @@ public final class CentralAvisosView {
     private Label monitorUltimaConexaoLabel;
 
     private Label monitorStatusLabel;
-
-    // ============================================================
-    // CRIAR VIEW
-    // ============================================================
 
     public static Parent criar(Stage stage) {
         return new CentralAvisosView()
@@ -169,19 +145,11 @@ public final class CentralAvisosView {
         return root;
     }
 
-    // ============================================================
-    // ESTILOS
-    // ============================================================
-
     private void configurarEstilos() {
 
         root.getStyleClass()
                 .add("central-root");
     }
-
-    // ============================================================
-    // LAYOUT
-    // ============================================================
 
     private void configurarLayout(Stage stage) {
 
@@ -198,10 +166,10 @@ public final class CentralAvisosView {
         );
     }
 
-    private ScrollPane criarScrollArea() {
+    private MFXScrollPane criarScrollArea() {
 
-        ScrollPane scroll =
-                new ScrollPane(content);
+        MFXScrollPane scroll =
+                new MFXScrollPane(content);
 
         scroll.setFitToWidth(true);
 
@@ -217,10 +185,6 @@ public final class CentralAvisosView {
 
         return scroll;
     }
-
-    // ============================================================
-    // CABEÇALHO
-    // ============================================================
 
     private Node criarCabecalho() {
 
@@ -258,10 +222,6 @@ public final class CentralAvisosView {
 
         return bar;
     }
-
-    // ============================================================
-    // MENU
-    // ============================================================
 
     private Node criarMenu(Stage stage) {
 
@@ -378,30 +338,45 @@ public final class CentralAvisosView {
         return subtitulo;
     }
 
-    private Button criarNavButton(
+    private MFXButton criarNavButton(
             String texto,
             Runnable acao,
             boolean ativo) {
 
-        Button button =
-                new Button(texto);
+        MFXButton button =
+                new MFXButton(texto);
 
         button.setMaxWidth(
                 Double.MAX_VALUE
         );
 
-        button.getStyleClass()
-                .add(
-                        ativo
-                                ? "central-nav-active"
-                                : "central-nav"
-                );
+        button.getStyleClass().add(
+                ativo ? "central-nav-active" : "central-nav"
+        );
+
+        botoesNavegacao.add(button);
 
         button.setOnAction(
-                e -> acao.run()
+                e -> {
+                    ativarNavegacao(button);
+                    acao.run();
+                }
         );
 
         return button;
+    }
+
+    private void ativarNavegacao(MFXButton selecionado) {
+
+        for (MFXButton botao : botoesNavegacao) {
+            botao.getStyleClass().remove("central-nav-active");
+            if (!botao.getStyleClass().contains("central-nav")) {
+                botao.getStyleClass().add("central-nav");
+            }
+        }
+
+        selecionado.getStyleClass().remove("central-nav");
+        selecionado.getStyleClass().add("central-nav-active");
     }
 
     private Label criarStatusLabel() {
@@ -418,10 +393,6 @@ public final class CentralAvisosView {
         return status;
     }
 
-    // ============================================================
-    // PREPARAR TELA
-    // ============================================================
-
     private void prepararTela(
             String titulo) {
 
@@ -430,19 +401,40 @@ public final class CentralAvisosView {
         content.getChildren()
                 .clear();
 
+        Label contexto =
+                new Label("CENTRAL DE COMUNICAÇÃO");
+
+        contexto.getStyleClass().add("page-eyebrow");
+
         Label cabecalho =
                 new Label(titulo);
 
         cabecalho.getStyleClass()
                 .add("central-page-title");
 
+        Label descricao = new Label(descricaoDaPagina(titulo));
+
+        descricao.getStyleClass().add("page-description");
+
+        VBox tituloPagina = new VBox(5, contexto, cabecalho, descricao);
+
+        tituloPagina.getStyleClass().add("page-heading");
+
         content.getChildren()
-                .add(cabecalho);
+                .add(tituloPagina);
     }
 
-    // ============================================================
-    // NOVO AVISO
-    // ============================================================
+    private String descricaoDaPagina(String titulo) {
+        return switch (titulo) {
+            case "Novo Aviso" -> "Crie uma comunicação clara e escolha como ela será exibida na Intranet.";
+            case "Popups" -> "Acompanhe, pesquise e gerencie os avisos publicados.";
+            case "Histórico" -> "Consulte o registro de comunicações enviadas pela Central.";
+            case "Acessando Agora" -> "Veja em tempo real a movimentação de visitantes na Intranet.";
+            case "Mensagem do Dia" -> "Defina a mensagem de destaque exibida aos colaboradores.";
+            case "Configurações" -> "Configure a conexão segura com o servidor da Intranet.";
+            default -> "Gerencie as comunicações da sua equipe em um só lugar.";
+        };
+    }
 
     private void novoAviso() {
 
@@ -452,6 +444,18 @@ public final class CentralAvisosView {
 
         VBox card =
                 criarCardFormulario();
+
+        Label tituloFormulario = new Label("Detalhes do aviso");
+        tituloFormulario.getStyleClass().add("form-title");
+
+        Label ajudaFormulario = new Label(
+                "Preencha as informações abaixo. Os campos principais serão enviados para todos os usuários da Intranet."
+        );
+        ajudaFormulario.setWrapText(true);
+        ajudaFormulario.getStyleClass().add("form-description");
+
+        VBox cabecalhoFormulario = new VBox(4, tituloFormulario, ajudaFormulario);
+        cabecalhoFormulario.getStyleClass().add("form-heading");
 
         GridPane grid =
                 criarGridFormulario();
@@ -464,16 +468,65 @@ public final class CentralAvisosView {
 
         adicionarCampoLink(grid);
 
-        card.getChildren()
-                .add(grid);
+        card.getChildren().addAll(cabecalhoFormulario, grid);
 
         card.getChildren()
                 .add(
                         criarAreaAcoes()
                 );
 
-        content.getChildren()
-                .add(card);
+        HBox editor = new HBox(22, card, criarResumoPublicacao());
+
+        editor.getStyleClass().add("editor-layout");
+
+        HBox.setHgrow(card, Priority.ALWAYS);
+
+        card.setMaxWidth(Double.MAX_VALUE);
+
+        content.getChildren().add(editor);
+    }
+
+    private VBox criarResumoPublicacao() {
+
+        Label estado = new Label("RASCUNHO");
+        estado.getStyleClass().add("summary-status");
+
+        Label titulo = new Label("Pronto para comunicar?");
+        titulo.getStyleClass().add("summary-title");
+
+        Label descricao = new Label(
+                "Revise o conteúdo antes de enviar o aviso para a Intranet."
+        );
+        descricao.setWrapText(true);
+        descricao.getStyleClass().add("summary-description");
+
+        Label guia = new Label("ANTES DE PUBLICAR");
+        guia.getStyleClass().add("summary-eyebrow");
+
+        Label dicaTitulo = new Label("✓  Use um título objetivo e fácil de identificar.");
+        Label dicaMensagem = new Label("✓  Informe o prazo e a ação esperada, quando houver.");
+        Label dicaLink = new Label("✓  Inclua um link para orientar os usuários.");
+
+        dicaTitulo.getStyleClass().add("summary-tip");
+        dicaMensagem.getStyleClass().add("summary-tip");
+        dicaLink.getStyleClass().add("summary-tip");
+
+        VBox resumo = new VBox(
+                14,
+                estado,
+                titulo,
+                descricao,
+                guia,
+                dicaTitulo,
+                dicaMensagem,
+                dicaLink
+        );
+
+        resumo.getStyleClass().add("publication-summary");
+        resumo.setPrefWidth(270);
+        resumo.setMinWidth(240);
+
+        return resumo;
     }
 
     private VBox criarCardFormulario() {
@@ -532,12 +585,12 @@ public final class CentralAvisosView {
         return label;
     }
 
-    private Button criarBotao(
+    private MFXButton criarBotao(
             String texto,
             boolean primario) {
 
-        Button button =
-                new Button(texto);
+        MFXButton button =
+                new MFXButton(texto);
 
         button.getStyleClass()
                 .add(
@@ -549,21 +602,21 @@ public final class CentralAvisosView {
         return button;
     }
 
-    // ============================================================
-    // CAMPOS
-    // ============================================================
-
     private void configurarCamposFormulario() {
 
         tituloField =
-                new TextField(
-                        "Digite o titulo"
-                );
+                new MFXTextField();
+
+        tituloField.setPromptText(
+                "Digite um título para o aviso"
+        );
 
         descricaoArea =
-                new TextArea(
-                        "Digite o que quer anunciar"
-                );
+                new TextArea();
+
+        descricaoArea.setPromptText(
+                "Digite a mensagem que deseja anunciar"
+        );
 
         descricaoArea.setPrefRowCount(6);
 
@@ -580,8 +633,7 @@ public final class CentralAvisosView {
                 "Não"
         );
 
-        ativoCombo.getSelectionModel()
-                .select("Sim");
+        ativoCombo.getSelectionModel().select("Sim");
 
         podeFecharCombo =
                 new ComboBox<>();
@@ -591,8 +643,7 @@ public final class CentralAvisosView {
                 "Não"
         );
 
-        podeFecharCombo.getSelectionModel()
-                .select("Sim");
+        podeFecharCombo.getSelectionModel().select("Sim");
 
         prioridadeCombo =
                 new ComboBox<>();
@@ -603,18 +654,34 @@ public final class CentralAvisosView {
                 "🔵  Normal"
         );
 
-        prioridadeCombo.getSelectionModel()
-                .select(0);
+        prioridadeCombo.getSelectionModel().select(0);
 
         linkIntranetField =
-                new TextField(
-                        "https://intranet.empresa.com/comunicados/manutencao"
-                );
+                new MFXTextField();
+
+        linkIntranetField.setPromptText(
+                "https://intranet.empresa.com/comunicados/manutencao"
+        );
+
+        configurarLarguraCamposFormulario();
     }
 
-    // ============================================================
-    // CAMPOS BÁSICOS
-    // ============================================================
+    private void configurarLarguraCamposFormulario() {
+
+        List<Control> campos = List.of(
+                tituloField,
+                descricaoArea,
+                ativoCombo,
+                podeFecharCombo,
+                prioridadeCombo,
+                linkIntranetField
+        );
+
+        for (Control campo : campos) {
+            campo.setMaxWidth(Double.MAX_VALUE);
+            GridPane.setHgrow(campo, Priority.ALWAYS);
+        }
+    }
 
     private void adicionarCamposBasicos(
             GridPane grid) {
@@ -690,10 +757,6 @@ public final class CentralAvisosView {
         );
     }
 
-    // ============================================================
-    // DATAS
-    // ============================================================
-
     private void adicionarCampoDatas(
             GridPane grid,
             int rowInicial) {
@@ -702,7 +765,7 @@ public final class CentralAvisosView {
                 rowInicial + 1;
 
         agendarDataCheck =
-                new CheckBox(
+                new MFXCheckbox(
                         "Agendar data de publicação/expiração"
                 );
 
@@ -730,31 +793,29 @@ public final class CentralAvisosView {
         expirarHoraField =
                 criarCampoHora("");
 
-        HBox publicarRow =
-                new HBox(
-                        8,
-                        publicarDataPicker,
-                        publicarHoraField
-                );
+        // --- LAYOUT CORRIGIDO COM ALINHAMENTO VERTICAL PERFEITO ---
+        HBox publicarRow = new HBox(publicarDataPicker, publicarHoraField);
+        HBox expirarRow = new HBox(expirarDataPicker, expirarHoraField);
 
-        HBox expirarRow =
-                new HBox(
-                        8,
-                        expirarDataPicker,
-                        expirarHoraField
-                );
+        publicarRow.setSpacing(12);
+        expirarRow.setSpacing(12);
 
-        publicarRow.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        // CENTER alinha perfeitamente o DatePicker e o TextField na mesma linha
+        publicarRow.setAlignment(Pos.CENTER_LEFT);
+        publicarRow.setStyle("-fx-alignment: center-left;");
 
-        expirarRow.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        expirarRow.setAlignment(Pos.CENTER_LEFT);
+        expirarRow.setStyle("-fx-alignment: center-left;");
+
+        // --- ADICIONE ISSO PARA SUBIR O CAMPO DE HORA ---
+        publicarHoraField.setTranslateY(-4);
+        expirarHoraField.setTranslateY(-4);
+
+        // ---------------------------------------------------------
 
         VBox publicarBox =
                 new VBox(
-                        7,
+                        0,
                         criarLabel(
                                 "Data de início da visibilidade"
                         ),
@@ -763,7 +824,7 @@ public final class CentralAvisosView {
 
         VBox expirarBox =
                 new VBox(
-                        7,
+                        0,
                         criarLabel(
                                 "Data de término da visibilidade"
                         ),
@@ -772,7 +833,7 @@ public final class CentralAvisosView {
 
         HBox dates =
                 new HBox(
-                        24,
+                        30,
                         publicarBox,
                         expirarBox
                 );
@@ -791,7 +852,7 @@ public final class CentralAvisosView {
 
         datasContainer =
                 new VBox(
-                        10,
+                        0,
                         dates
                 );
 
@@ -844,10 +905,6 @@ public final class CentralAvisosView {
         );
     }
 
-    // ============================================================
-    // IMAGEM
-    // ============================================================
-
     private void adicionarCampoImagem(
             GridPane grid) {
 
@@ -874,7 +931,7 @@ public final class CentralAvisosView {
                         )
                 );
 
-        Button selecionarImagemButton =
+        MFXButton selecionarImagemButton =
                 criarBotao(
                         "🖼  Selecionar imagem",
                         false
@@ -964,7 +1021,7 @@ public final class CentralAvisosView {
     }
 
     private void configurarEventosImagem(
-            Button selecionarButton,
+            MFXButton selecionarButton,
             FileChooser chooser) {
 
         selecionarButton.setOnAction(e -> {
@@ -1012,10 +1069,6 @@ public final class CentralAvisosView {
         );
     }
 
-    // ============================================================
-    // LINK
-    // ============================================================
-
     private void adicionarCampoLink(
             GridPane grid) {
 
@@ -1041,17 +1094,18 @@ public final class CentralAvisosView {
         );
     }
 
-    // ============================================================
-    // DATA PICKER
-    // ============================================================
-
-    private DatePicker criarDatePicker(
+    private MFXDatePicker criarDatePicker(
             LocalDate valorInicial) {
 
-        DatePicker picker =
-                new DatePicker(
-                        valorInicial
-                );
+        // MFXDatePicker não tem construtor com LocalDate: o valor é
+        // definido depois via setValue()/getValue(), assim como um
+        // DatePicker comum.
+        MFXDatePicker picker =
+                new MFXDatePicker();
+
+        if (valorInicial != null) {
+            picker.setValue(valorInicial);
+        }
 
         picker.setPromptText(
                 "dd/mm/aaaa"
@@ -1059,18 +1113,19 @@ public final class CentralAvisosView {
 
         picker.setPrefWidth(140);
 
+        forcarCorDoPlaceholder(picker, "dd/mm/aaaa");
+
         return picker;
     }
 
     // ============================================================
-    // CAMPO HORA
+    // MÉTODO CORRIGIDO: CAMPO DE HORA MAIOR E SEM RETÂNGULO
     // ============================================================
-
-    private TextField criarCampoHora(
+    private MFXTextField criarCampoHora(
             String valorInicial) {
 
-        TextField campo =
-                new TextField(
+        MFXTextField campo =
+                new MFXTextField(
                         valorInicial
                 );
 
@@ -1078,7 +1133,15 @@ public final class CentralAvisosView {
                 "HH:mm"
         );
 
-        campo.setPrefWidth(70);
+        // --- CORREÇÃO DO TAMANHO E DO RETÂNGULO ---
+        campo.setPrefWidth(100);
+        campo.setMinWidth(85);
+        campo.setMaxWidth(120);
+
+        // Aplica transparência direta no código para garantir que o retângulo suma
+        // Aplica transparência e empurra o campo 4px para CIMA para alinhar com o DatePicker
+        campo.setStyle("-fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 0 0 4 0; -fx-translate-y: -8px;");
+        // -----------------------------
 
         UnaryOperator<TextFormatter.Change> filtro =
                 change -> {
@@ -1100,12 +1163,140 @@ public final class CentralAvisosView {
                 new TextFormatter<>(filtro)
         );
 
+        forcarCorDoPlaceholder(campo, "HH:mm");
+
         return campo;
     }
 
-    // ============================================================
-    // AÇÕES
-    // ============================================================
+    /**
+     * Corrige à força a cor do texto de placeholder ("dica") dos campos
+     * MaterialFX (MFXTextField, MFXDatePicker...).
+     * <p>
+     * Tentativas anteriores usando seletores de style class fixos
+     * (".floating-text", ".prompt-text" etc.) não funcionaram porque esses
+     * nomes internos variam entre versões da biblioteca MaterialFX — a
+     * partir da 11.14.0, por exemplo, o "Theming System" foi reescrito por
+     * completo.
+     * <p>
+     * Em vez de depender do nome da style class, aqui percorremos toda a
+     * árvore de nós internos do campo procurando o nó de texto (Text ou
+     * Label) cujo conteúdo é EXATAMENTE igual ao placeholder configurado
+     * (por exemplo "HH:mm" ou "dd/mm/aaaa"). Isso funciona independente de
+     * como a skin da versão instalada nomeia ou organiza esse nó, porque a
+     * única coisa garantida é que o texto exibido bate com o promptText.
+     * <p>
+     * Como a skin de alguns controles MaterialFX só termina de montar os
+     * nós internos um pouco depois do primeiro layout, a busca é repetida
+     * algumas vezes (imediatamente, e depois em pequenos atrasos) até
+     * achar e colorir o nó, ou desistir após ~1.5s.
+     */
+    private void forcarCorDoPlaceholder(Control campo, String textoPlaceholder) {
+
+        String corHex = "#969e8e"; // equivalente a -fx-ink-subtle
+
+        int[] tentativas = {0};
+        int maxTentativas = 8;
+
+        Runnable[] aplicarRef = new Runnable[1];
+
+        aplicarRef[0] = () -> {
+
+            boolean achou =
+                    colorirNoComTexto(
+                            campo,
+                            textoPlaceholder,
+                            corHex
+                    );
+
+            tentativas[0]++;
+
+            if (!achou && tentativas[0] < maxTentativas) {
+
+                PauseTransition espera =
+                        new PauseTransition(
+                                Duration.millis(200)
+                        );
+
+                espera.setOnFinished(
+                        e -> aplicarRef[0].run()
+                );
+
+                espera.play();
+            }
+        };
+
+        campo.sceneProperty().addListener(
+                (obs, cenaAntiga, novaCena) -> {
+
+                    if (novaCena != null) {
+                        tentativas[0] = 0;
+                        Platform.runLater(aplicarRef[0]);
+                    }
+                }
+        );
+
+        // Reaplica quando o foco muda: em alguns modos (floating label
+        // "INLINE"/"BORDER"), o nó de texto do placeholder pode ser
+        // recriado/reposicionado ao focar e desfocar o campo.
+        campo.focusedProperty().addListener(
+                (obs, focadoAntes, focadoAgora) -> {
+
+                    tentativas[0] = 0;
+                    Platform.runLater(aplicarRef[0]);
+                }
+        );
+
+        if (campo.getScene() != null) {
+            Platform.runLater(aplicarRef[0]);
+        }
+    }
+
+    /**
+     * Procura recursivamente, dentro da árvore de nós de "raiz", um nó de
+     * texto (Text ou Label) cujo conteúdo seja exatamente igual a "alvo" e
+     * aplica a cor informada. Retorna true se encontrou e coloriu.
+     */
+    private boolean colorirNoComTexto(
+            Node raiz,
+            String alvo,
+            String corHex) {
+
+        if (raiz instanceof Text texto) {
+
+            if (alvo.equals(texto.getText())) {
+
+                texto.setStyle(
+                        "-fx-fill: " + corHex + ";"
+                );
+
+                return true;
+            }
+        }
+
+        if (raiz instanceof Label label) {
+
+            if (alvo.equals(label.getText())) {
+
+                label.setStyle(
+                        "-fx-text-fill: " + corHex + ";"
+                );
+
+                return true;
+            }
+        }
+
+        if (raiz instanceof Parent pai) {
+
+            for (Node filho : pai.getChildrenUnmodifiable()) {
+
+                if (colorirNoComTexto(filho, alvo, corHex)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     private HBox criarAreaAcoes() {
 
@@ -1116,7 +1307,9 @@ public final class CentralAvisosView {
                 Pos.CENTER_RIGHT
         );
 
-        Button previewButton =
+        actions.getStyleClass().add("form-actions");
+
+        MFXButton previewButton =
                 criarBotao(
                         "◉  Visualizar Popup",
                         false
@@ -1161,10 +1354,6 @@ public final class CentralAvisosView {
         return actions;
     }
 
-    // ============================================================
-    // ENVIO
-    // ============================================================
-
     private void enviarAviso() {
 
         feedbackLabel.setText("");
@@ -1203,10 +1392,16 @@ public final class CentralAvisosView {
             return false;
         }
 
-        if (
-                expiraEm != null &&
-                        !expiraEm.isAfter(publicaEm)
-        ) {
+        if (agendarDataCheck.isSelected() && expiraEm == null) {
+
+            feedbackLabel.setText(
+                    "Informe a data e o horário de término ou desmarque o agendamento."
+            );
+
+            return false;
+        }
+
+        if (expiraEm != null && !expiraEm.isAfter(publicaEm)) {
 
             feedbackLabel.setText(
                     "A expiração deve ser depois da publicação."
@@ -1307,10 +1502,6 @@ public final class CentralAvisosView {
                         .matches();
     }
 
-    // ============================================================
-    // REALIZAR ENVIO
-    // ============================================================
-
     private void realizarEnvio() {
 
         String titulo =
@@ -1338,14 +1529,10 @@ public final class CentralAvisosView {
                 obterDataExpiracao();
 
         boolean ativo =
-                "Sim".equals(
-                        ativoCombo.getValue()
-                );
+                "Sim".equals(ativoCombo.getValue());
 
         boolean podeFechar =
-                "Sim".equals(
-                        podeFecharCombo.getValue()
-                );
+                "Sim".equals(podeFecharCombo.getValue());
 
         enviarButton.setDisable(true);
 
@@ -1425,10 +1612,6 @@ public final class CentralAvisosView {
         envio.start();
     }
 
-    // ============================================================
-    // PRIORIDADE
-    // ============================================================
-
     private String determinarPrioridade() {
 
         String valor =
@@ -1448,10 +1631,6 @@ public final class CentralAvisosView {
 
         return "normal";
     }
-
-    // ============================================================
-    // LIMPAR IMAGEM
-    // ============================================================
 
     private void limparCamposImagem() {
 
@@ -1481,10 +1660,6 @@ public final class CentralAvisosView {
             removerImagemButton.setManaged(false);
         }
     }
-
-    // ============================================================
-    // PREVIEW
-    // ============================================================
 
     private void visualizarPopup() {
 
@@ -1586,12 +1761,10 @@ public final class CentralAvisosView {
                 .add(mensagem);
 
         if (
-                "Sim".equals(
-                        podeFecharCombo.getValue()
-                )
+                "Sim".equals(podeFecharCombo.getValue())
         ) {
 
-            Button fechar =
+            MFXButton fechar =
                     criarBotao(
                             "Fechar",
                             false
@@ -1655,10 +1828,6 @@ public final class CentralAvisosView {
 
         return scene;
     }
-
-    // ============================================================
-    // POPUPS
-    // ============================================================
 
     private void popups() {
 
@@ -1757,32 +1926,32 @@ public final class CentralAvisosView {
                 Pos.CENTER_LEFT
         );
 
-        Button todos =
+        MFXButton todos =
                 criarBotao(
                         "Todos",
                         false
                 );
 
-        Button ativos =
+        MFXButton ativos =
                 criarBotao(
                         "🟢 Ativos",
                         false
                 );
 
-        Button desativados =
+        MFXButton desativados =
                 criarBotao(
                         "⚪ Desativados",
                         false
                 );
 
-        Button atualizar =
+        MFXButton atualizar =
                 criarBotao(
                         "↻ Atualizar",
                         false
                 );
 
-        TextField pesquisa =
-                new TextField();
+        MFXTextField pesquisa =
+                new MFXTextField();
 
         pesquisa.setPromptText(
                 "Pesquisar popup..."
@@ -1797,13 +1966,13 @@ public final class CentralAvisosView {
 
         lista.setFillWidth(true);
 
-        ScrollPane scroll =
-                new ScrollPane(lista);
+        MFXScrollPane scroll =
+                new MFXScrollPane(lista);
 
         scroll.setFitToWidth(true);
 
         scroll.setHbarPolicy(
-                ScrollPane.ScrollBarPolicy.NEVER
+                MFXScrollPane.ScrollBarPolicy.NEVER
         );
 
         VBox.setVgrow(
@@ -1889,10 +2058,6 @@ public final class CentralAvisosView {
                 client
         );
     }
-
-    // ============================================================
-    // CARREGAR POPUPS
-    // ============================================================
 
     private void carregarPopups(
             VBox lista,
@@ -2064,10 +2229,6 @@ public final class CentralAvisosView {
         carregar.start();
     }
 
-    // ============================================================
-    // CARD DO POPUP
-    // ============================================================
-
     private VBox criarCardPopup(
             IntranetAvisosClient.Popup popup,
             IntranetAvisosClient client,
@@ -2091,10 +2252,6 @@ public final class CentralAvisosView {
                         "-fx-font-weight: bold;"
         );
 
-        // --------------------------------------------------------
-        // STATUS
-        // --------------------------------------------------------
-
         Label status =
                 new Label(
                         popup.ativo()
@@ -2117,10 +2274,6 @@ public final class CentralAvisosView {
             );
         }
 
-        // --------------------------------------------------------
-        // MENSAGEM
-        // --------------------------------------------------------
-
         Label mensagem =
                 new Label(
                         popup.mensagem()
@@ -2129,10 +2282,6 @@ public final class CentralAvisosView {
         mensagem.setWrapText(true);
 
         mensagem.setMaxWidth(600);
-
-        // --------------------------------------------------------
-        // DETALHES
-        // --------------------------------------------------------
 
         Label detalhes =
                 new Label(
@@ -2147,11 +2296,7 @@ public final class CentralAvisosView {
         detalhes.getStyleClass()
                 .add("muted");
 
-        // --------------------------------------------------------
-        // VISUALIZAR
-        // --------------------------------------------------------
-
-        Button visualizar =
+        MFXButton visualizar =
                 criarBotao(
                         "👁 Visualizar",
                         false
@@ -2203,11 +2348,7 @@ public final class CentralAvisosView {
             alert.showAndWait();
         });
 
-        // --------------------------------------------------------
-        // ALTERAR STATUS
-        // --------------------------------------------------------
-
-        Button alterarStatus;
+        MFXButton alterarStatus;
 
         if (popup.ativo()) {
 
@@ -2335,11 +2476,7 @@ public final class CentralAvisosView {
                     });
         });
 
-        // --------------------------------------------------------
-        // DELETE
-        // --------------------------------------------------------
-
-        Button excluir =
+        MFXButton excluir =
                 criarBotao(
                         "🗑 Excluir",
                         false
@@ -2433,11 +2570,7 @@ public final class CentralAvisosView {
                     });
         });
 
-        // --------------------------------------------------------
-        // ABRIR NEXT
-        // --------------------------------------------------------
-
-        Button abrirNext =
+        MFXButton abrirNext =
                 criarBotao(
                         "🌐 Abrir Next.js",
                         false
@@ -2465,10 +2598,6 @@ public final class CentralAvisosView {
             }
         });
 
-        // --------------------------------------------------------
-        // BOTÕES
-        // --------------------------------------------------------
-
         HBox botoes =
                 new HBox(10);
 
@@ -2479,10 +2608,6 @@ public final class CentralAvisosView {
                         excluir,
                         abrirNext
                 );
-
-        // --------------------------------------------------------
-        // INFO
-        // --------------------------------------------------------
 
         Label info =
                 new Label(
@@ -2508,10 +2633,6 @@ public final class CentralAvisosView {
 
         return card;
     }
-
-    // ============================================================
-    // HISTÓRICO
-    // ============================================================
 
     private void historico() {
 
@@ -2561,7 +2682,7 @@ public final class CentralAvisosView {
         content.getChildren()
                 .add(table);
 
-        Button atualizar =
+        MFXButton atualizar =
                 criarBotao(
                         "⟳  Atualizar",
                         false
@@ -2643,10 +2764,6 @@ public final class CentralAvisosView {
         return grid;
     }
 
-    // ============================================================
-    // MONITORAMENTO
-    // ============================================================
-
     private void monitorAcessos() {
 
         prepararTela(
@@ -2654,21 +2771,24 @@ public final class CentralAvisosView {
         );
 
         VBox card =
-                new VBox(8);
+                new VBox(10);
 
         card.getStyleClass()
-                .add("form-card");
+                .add("dashboard-live-card");
 
         card.setAlignment(
                 Pos.CENTER
         );
 
         card.setPadding(
-                new Insets(40)
+                new Insets(24)
         );
 
-        Label icon =
-                new Label("👁");
+        Label chip = new Label("●  AO VIVO");
+
+        chip.getStyleClass().add("dashboard-chip");
+
+        Label icon = new Label("👁");
 
         icon.getStyleClass()
                 .add("popup-icon");
@@ -2684,11 +2804,11 @@ public final class CentralAvisosView {
 
         Label legenda =
                 new Label(
-                        "pessoas vendo a intranet agora"
+                        "Pessoas navegando na Intranet agora"
                 );
 
         legenda.getStyleClass()
-                .add("muted");
+                .add("dashboard-label");
 
         HBox liveRow =
                 new HBox(6);
@@ -2720,6 +2840,7 @@ public final class CentralAvisosView {
 
         card.getChildren()
                 .addAll(
+                        chip,
                         icon,
                         monitorOnlineLabel,
                         legenda,
@@ -2731,6 +2852,10 @@ public final class CentralAvisosView {
 
         HBox stats =
                 new HBox(12);
+
+        stats.setMaxWidth(Double.MAX_VALUE);
+
+        stats.getStyleClass().add("dashboard-stats");
 
         monitorAcessosHojeLabel =
                 criarStatValor();
@@ -2744,14 +2869,17 @@ public final class CentralAvisosView {
         stats.getChildren()
                 .addAll(
                         criarStatCard(
+                                "◷",
                                 "Acessos hoje",
                                 monitorAcessosHojeLabel
                         ),
                         criarStatCard(
+                                "◉",
                                 "Total de visitantes",
                                 monitorTotalVisitantesLabel
                         ),
                         criarStatCard(
+                                "↗",
                                 "Última conexão",
                                 monitorUltimaConexaoLabel
                         )
@@ -2775,8 +2903,13 @@ public final class CentralAvisosView {
     }
 
     private Node criarStatCard(
+            String icone,
             String texto,
             Label valor) {
+
+        Label simbolo = new Label(icone);
+
+        simbolo.getStyleClass().add("stat-icon");
 
         Label rotulo =
                 new Label(texto);
@@ -2784,12 +2917,11 @@ public final class CentralAvisosView {
         rotulo.getStyleClass()
                 .add("muted");
 
-        VBox box =
-                new VBox(
-                        6,
-                        valor,
-                        rotulo
-                );
+        VBox dados = new VBox(5, valor, rotulo);
+
+        HBox box = new HBox(14, simbolo, dados);
+
+        box.setAlignment(Pos.CENTER_LEFT);
 
         box.getStyleClass()
                 .add("stat-card");
@@ -2912,10 +3044,6 @@ public final class CentralAvisosView {
         }
     }
 
-    // ============================================================
-    // MENSAGEM DO DIA
-    // ============================================================
-
     private void abrirMensagemDoDia(
             Stage stage) {
 
@@ -2932,10 +3060,6 @@ public final class CentralAvisosView {
                 .add(tela);
     }
 
-    // ============================================================
-    // CONFIGURAÇÕES
-    // ============================================================
-
     private void configuracoes() {
 
         prepararTela("Configurações");
@@ -2945,9 +3069,11 @@ public final class CentralAvisosView {
         config.getStyleClass()
                 .add("form-card");
 
-        TextField endereco = new TextField(
+        MFXTextField endereco = new MFXTextField(
                 IntranetAvisosClient.baseUrl()
         );
+
+        endereco.setMaxWidth(Double.MAX_VALUE);
 
         endereco.setPromptText(
                 "https://intranet.exemplo.gov.br"
@@ -2958,7 +3084,7 @@ public final class CentralAvisosView {
         feedback.getStyleClass()
                 .add("muted");
 
-        Button salvar = criarBotao(
+        MFXButton salvar = criarBotao(
                 "Salvar conexão",
                 true
         );
@@ -2992,7 +3118,7 @@ public final class CentralAvisosView {
     }
 
     private void salvarConexao(
-            TextField endereco,
+            MFXTextField endereco,
             Label feedback) {
 
         String url = endereco.getText();
@@ -3028,9 +3154,9 @@ public final class CentralAvisosView {
     }
 
     private void testarESalvarConexao(
-            TextField endereco,
+            MFXTextField endereco,
             Label feedback,
-            Button salvar) {
+            MFXButton salvar) {
 
         try {
 
@@ -3093,10 +3219,6 @@ public final class CentralAvisosView {
         teste.start();
     }
 
-    // ============================================================
-    // MENSAGENS
-    // ============================================================
-
     private void mostrarInfo(
             String titulo,
             String mensagem) {
@@ -3139,10 +3261,6 @@ public final class CentralAvisosView {
 
         alert.showAndWait();
     }
-
-    // ============================================================
-    // UTILITÁRIOS
-    // ============================================================
 
     private static String formatarUltimaConexao(
             String isoUtc) {
