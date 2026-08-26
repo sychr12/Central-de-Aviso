@@ -1,9 +1,3 @@
-/// Olá! Este arquivo concentra o gerenciamento dos avisos.
-/// Ele é responsável por adicionar, listar e remover avisos.
-/// Ele utiliza o modelo Aviso e o armazenamento local.
-/// Alterações na estrutura dos avisos ou no armazenamento podem afetar este arquivo. =)
-
-
 package com.example.intranet_adm.service;
 
 import com.example.intranet_adm.model.Aviso;
@@ -15,103 +9,538 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Serviço responsável pelo gerenciamento do histórico de avisos.
+ *
+ * Responsabilidades:
+ * - Adicionar avisos;
+ * - Listar avisos;
+ * - Remover avisos;
+ * - Persistir o histórico localmente.
+ */
 public class AvisoService {
-    private static final Path DEFAULT_STORAGE = defaultStorage();
 
-    private final List<Aviso> avisos = new ArrayList<>();
+    private static final int LIMITE_AVISOS = 10_000;
+
+    private static final Path DEFAULT_STORAGE =
+            defaultStorage();
+
+    private final List<Aviso> avisos =
+            new ArrayList<>();
+
     private final Path storageFile;
+
     private int proximoId = 1;
 
+    // ============================================================
+    // CONSTRUTORES
+    // ============================================================
+
+    /**
+     * Construtor padrão.
+     *
+     * Utiliza o armazenamento padrão da aplicação.
+     */
     public AvisoService() {
         this(DEFAULT_STORAGE);
     }
 
-    AvisoService(Path storageFile) {
+    /**
+     * Construtor utilizado para definir
+     * um arquivo de armazenamento específico.
+     */
+    public AvisoService(Path storageFile) {
+
+        if (storageFile == null) {
+            throw new IllegalArgumentException(
+                    "O arquivo de armazenamento não pode ser nulo."
+            );
+        }
+
         this.storageFile = storageFile;
+
         carregar();
     }
 
-    public synchronized Aviso adicionar(String titulo, String mensagem, String autor) {
-        Aviso aviso = new Aviso(proximoId++, titulo, mensagem, autor, LocalDate.now());
-        avisos.add(0, aviso);
+    // ============================================================
+    // ADICIONAR
+    // ============================================================
+
+    /**
+     * Adiciona um novo aviso ao histórico.
+     *
+     * O aviso mais recente fica no início da lista.
+     */
+    public synchronized Aviso adicionar(
+            String titulo,
+            String mensagem,
+            String autor
+    ) {
+
+        validarTexto(
+                titulo,
+                "O título é obrigatório."
+        );
+
+        validarTexto(
+                mensagem,
+                "A mensagem é obrigatória."
+        );
+
+        validarTexto(
+                autor,
+                "O autor é obrigatório."
+        );
+
+        Aviso aviso =
+                new Aviso(
+                        proximoId++,
+                        titulo.trim(),
+                        mensagem.trim(),
+                        autor.trim(),
+                        LocalDate.now()
+                );
+
+        avisos.add(
+                0,
+                aviso
+        );
+
         try {
+
             salvar();
+
         } catch (IOException error) {
+
             avisos.remove(aviso);
+
             proximoId--;
-            throw new IllegalStateException("Não foi possível salvar o histórico local.", error);
+
+            throw new IllegalStateException(
+                    "Não foi possível salvar o histórico local.",
+                    error
+            );
         }
+
         return aviso;
     }
 
-    public synchronized boolean remover(int id) {
-        boolean removed = avisos.removeIf(aviso -> aviso.getId() == id);
-        if (!removed) return false;
-        try {
-            salvar();
-        } catch (IOException error) {
-            carregar();
-            throw new IllegalStateException("Não foi possível atualizar o histórico local.", error);
+    // ============================================================
+    // REMOVER
+    // ============================================================
+
+    /**
+     * Remove um aviso pelo ID.
+     */
+    public synchronized boolean remover(
+            int id
+    ) {
+
+        if (id <= 0) {
+            return false;
         }
+
+        Aviso removido = null;
+
+        for (Aviso aviso : avisos) {
+
+            if (aviso.getId() == id) {
+
+                removido = aviso;
+
+                break;
+            }
+        }
+
+        if (removido == null) {
+            return false;
+        }
+
+        avisos.remove(removido);
+
+        try {
+
+            salvar();
+
+        } catch (IOException error) {
+
+            /*
+             * Restaura o aviso caso a gravação
+             * do arquivo falhe.
+             */
+            avisos.add(
+                    0,
+                    removido
+            );
+
+            throw new IllegalStateException(
+                    "Não foi possível atualizar o histórico local.",
+                    error
+            );
+        }
+
         return true;
     }
 
+    // ============================================================
+    // LISTAR
+    // ============================================================
+
+    /**
+     * Retorna todos os avisos.
+     *
+     * Uma cópia da lista é retornada para impedir
+     * alterações externas no armazenamento interno.
+     */
     public synchronized List<Aviso> listarTodos() {
-        return Collections.unmodifiableList(new ArrayList<>(avisos));
+
+        return Collections.unmodifiableList(
+                new ArrayList<>(avisos)
+        );
     }
 
-    private synchronized void carregar() {
-        avisos.clear();
-        proximoId = 1;
-        if (!Files.exists(storageFile)) return;
+    // ============================================================
+    // BUSCAR POR ID
+    // ============================================================
 
-        try (DataInputStream input = new DataInputStream(Files.newInputStream(storageFile))) {
-            int total = input.readInt();
-            if (total < 0 || total > 10_000) throw new IOException("Quantidade de avisos inválida.");
-            for (int index = 0; index < total; index++) {
-                Aviso aviso = new Aviso(
-                        input.readInt(), input.readUTF(), input.readUTF(), input.readUTF(),
-                        LocalDate.ofEpochDay(input.readLong()));
-                avisos.add(aviso);
-                proximoId = Math.max(proximoId, aviso.getId() + 1);
+    /**
+     * Busca um aviso pelo ID.
+     *
+     * Retorna null caso não seja encontrado.
+     */
+    public synchronized Aviso buscarPorId(
+            int id
+    ) {
+
+        for (Aviso aviso : avisos) {
+
+            if (aviso.getId() == id) {
+                return aviso;
             }
+        }
+
+        return null;
+    }
+
+    // ============================================================
+    // QUANTIDADE
+    // ============================================================
+
+    /**
+     * Retorna a quantidade de avisos armazenados.
+     */
+    public synchronized int quantidade() {
+
+        return avisos.size();
+    }
+
+    // ============================================================
+    // LIMPAR
+    // ============================================================
+
+    /**
+     * Remove todos os avisos.
+     */
+    public synchronized void limpar() {
+
+        if (avisos.isEmpty()) {
+            return;
+        }
+
+        List<Aviso> backup =
+                new ArrayList<>(avisos);
+
+        avisos.clear();
+
+        try {
+
+            salvar();
+
+            proximoId = 1;
+
         } catch (IOException error) {
-            System.err.println("Não foi possível carregar o histórico de avisos: " + error.getMessage());
+
+            avisos.addAll(backup);
+
+            throw new IllegalStateException(
+                    "Não foi possível limpar o histórico local.",
+                    error
+            );
+        }
+    }
+
+    // ============================================================
+    // CARREGAR
+    // ============================================================
+
+    /**
+     * Carrega os avisos armazenados no disco.
+     */
+    private synchronized void carregar() {
+
+        avisos.clear();
+
+        proximoId = 1;
+
+        if (!Files.exists(storageFile)) {
+            return;
+        }
+
+        try (
+                DataInputStream input =
+                        new DataInputStream(
+                                Files.newInputStream(
+                                        storageFile
+                                )
+                        )
+        ) {
+
+            int total =
+                    input.readInt();
+
+            if (
+                    total < 0 ||
+                            total > LIMITE_AVISOS
+            ) {
+
+                throw new IOException(
+                        "Quantidade de avisos inválida."
+                );
+            }
+
+            for (
+                    int index = 0;
+                    index < total;
+                    index++
+            ) {
+
+                int id =
+                        input.readInt();
+
+                String titulo =
+                        input.readUTF();
+
+                String mensagem =
+                        input.readUTF();
+
+                String autor =
+                        input.readUTF();
+
+                long epochDay =
+                        input.readLong();
+
+                LocalDate data =
+                        LocalDate.ofEpochDay(
+                                epochDay
+                        );
+
+                Aviso aviso =
+                        new Aviso(
+                                id,
+                                titulo,
+                                mensagem,
+                                autor,
+                                data
+                        );
+
+                avisos.add(
+                        aviso
+                );
+
+                proximoId =
+                        Math.max(
+                                proximoId,
+                                id + 1
+                        );
+            }
+
+        } catch (IOException | RuntimeException error) {
+
+            System.err.println(
+                    "Não foi possível carregar o histórico de avisos: "
+                            + error.getMessage()
+            );
+
             avisos.clear();
+
             proximoId = 1;
         }
     }
 
-    private void salvar() throws IOException {
-        Files.createDirectories(storageFile.getParent());
-        Path temporary = storageFile.resolveSibling(storageFile.getFileName() + ".tmp");
-        try (DataOutputStream output = new DataOutputStream(Files.newOutputStream(temporary))) {
-            output.writeInt(avisos.size());
-            for (Aviso aviso : avisos) {
-                output.writeInt(aviso.getId());
-                output.writeUTF(aviso.getTitulo());
-                output.writeUTF(aviso.getMensagem());
-                output.writeUTF(aviso.getAutor());
-                output.writeLong(aviso.getDataPublicacao().toEpochDay());
-            }
+    // ============================================================
+    // SALVAR
+    // ============================================================
+
+    /**
+     * Salva o histórico utilizando um arquivo temporário.
+     *
+     * Isso reduz o risco de corromper o arquivo principal
+     * caso a aplicação seja encerrada durante a gravação.
+     */
+    private synchronized void salvar()
+            throws IOException {
+
+        Path diretorio =
+                storageFile.getParent();
+
+        if (diretorio != null) {
+
+            Files.createDirectories(
+                    diretorio
+            );
         }
+
+        Path temporary =
+                storageFile.resolveSibling(
+                        storageFile.getFileName()
+                                + ".tmp"
+                );
+
         try {
-            Files.move(temporary, storageFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException error) {
-            Files.move(temporary, storageFile, StandardCopyOption.REPLACE_EXISTING);
+
+            try (
+                    DataOutputStream output =
+                            new DataOutputStream(
+                                    Files.newOutputStream(
+                                            temporary,
+                                            StandardOpenOption.CREATE,
+                                            StandardOpenOption.TRUNCATE_EXISTING,
+                                            StandardOpenOption.WRITE
+                                    )
+                            )
+            ) {
+
+                output.writeInt(
+                        avisos.size()
+                );
+
+                for (
+                        Aviso aviso :
+                        avisos
+                ) {
+
+                    output.writeInt(
+                            aviso.getId()
+                    );
+
+                    output.writeUTF(
+                            aviso.getTitulo()
+                    );
+
+                    output.writeUTF(
+                            aviso.getMensagem()
+                    );
+
+                    output.writeUTF(
+                            aviso.getAutor()
+                    );
+
+                    output.writeLong(
+                            aviso.getDataPublicacao()
+                                    .toEpochDay()
+                    );
+                }
+            }
+
+            try {
+
+                Files.move(
+                        temporary,
+                        storageFile,
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE
+                );
+
+            } catch (
+                    AtomicMoveNotSupportedException error
+            ) {
+
+                Files.move(
+                        temporary,
+                        storageFile,
+                        StandardCopyOption.REPLACE_EXISTING
+                );
+            }
+
+        } finally {
+
+            /*
+             * Caso alguma etapa falhe, tenta remover
+             * o arquivo temporário.
+             */
+            try {
+
+                Files.deleteIfExists(
+                        temporary
+                );
+
+            } catch (IOException ignored) {
+                // Não impede o erro original.
+            }
         }
     }
 
+    // ============================================================
+    // VALIDAÇÃO
+    // ============================================================
+
+    private static void validarTexto(
+            String valor,
+            String mensagem
+    ) {
+
+        if (
+                valor == null ||
+                        valor.isBlank()
+        ) {
+
+            throw new IllegalArgumentException(
+                    mensagem
+            );
+        }
+    }
+
+    // ============================================================
+    // ARMAZENAMENTO PADRÃO
+    // ============================================================
+
     private static Path defaultStorage() {
-        String appData = System.getenv("APPDATA");
-        Path baseDirectory = appData == null || appData.isBlank()
-                ? Path.of(System.getProperty("user.home"), ".intranet-adm")
-                : Path.of(appData, "Intranet-IDAM");
-        return baseDirectory.resolve("historico-avisos.bin");
+
+        String appData =
+                System.getenv("APPDATA");
+
+        Path baseDirectory;
+
+        if (
+                appData == null ||
+                        appData.isBlank()
+        ) {
+
+            baseDirectory =
+                    Path.of(
+                            System.getProperty(
+                                    "user.home"
+                            ),
+                            ".intranet-adm"
+                    );
+
+        } else {
+
+            baseDirectory =
+                    Path.of(
+                            appData,
+                            "Intranet-IDAM"
+                    );
+        }
+
+        return baseDirectory.resolve(
+                "historico-avisos.bin"
+        );
     }
 }

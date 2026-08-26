@@ -1,129 +1,194 @@
-/// Olá! Este arquivo gerencia as mensagens do dia armazenadas localmente.
-/// Ele controla a leitura, adição e remoção das mensagens.
-/// A MensagemDoDiaView utiliza este arquivo para atualizar a lista exibida.
-/// Alterações no formato ou armazenamento das mensagens devem ser refletidas aqui. =)
-
-
 package com.example.intranet_adm.util;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Gerencia as mensagens do dia armazenadas localmente.
+ *
+ * As mensagens são mantidas em memória e persistidas
+ * em um arquivo local.
+ */
 public final class DailyMessages {
 
-    private DailyMessages() {}
+    private static final String DEFAULT_MESSAGE =
+            "Nenhuma mensagem cadastrada.";
 
-    private static final List<String> MESSAGES = new ArrayList<>();
+    private static final List<String> MESSAGES =
+            new ArrayList<>();
+
+    private DailyMessages() {
+        // Classe utilitária.
+    }
+
+    // ============================================================
+    // INICIALIZAÇÃO
+    // ============================================================
 
     static {
         carregarDoArquivo();
     }
 
-    private static void carregarDoArquivo() {
-        try {
-            Path arquivo = getArquivoMensagens();
+    // ============================================================
+    // CARREGAR
+    // ============================================================
 
-            if (!Files.exists(arquivo)) {
-                return;
-            }
+    private static synchronized void carregarDoArquivo() {
+
+        Path arquivo = getArquivoMensagens();
+
+        if (!Files.exists(arquivo)) {
+            return;
+        }
+
+        try {
 
             List<String> linhas =
-                    Files.readAllLines(arquivo, StandardCharsets.UTF_8);
+                    Files.readAllLines(
+                            arquivo,
+                            StandardCharsets.UTF_8
+                    );
 
             MESSAGES.clear();
 
             for (String linha : linhas) {
-                String mensagem = linha.trim();
 
-                if (!mensagem.isEmpty()) {
+                if (linha == null) {
+                    continue;
+                }
+
+                String mensagem =
+                        linha.trim();
+
+                if (!mensagem.isEmpty()
+                        && !MESSAGES.contains(mensagem)) {
+
                     MESSAGES.add(mensagem);
                 }
             }
 
-            System.out.println("Mensagens carregadas: " + MESSAGES.size());
-            System.out.println("Arquivo: " + arquivo.toAbsolutePath());
+        } catch (IOException error) {
 
-        } catch (IOException e) {
             System.err.println(
-                    "Não foi possível carregar mensagens: "
-                            + e.getMessage()
+                    "Não foi possível carregar as mensagens: "
+                            + error.getMessage()
             );
+
+            MESSAGES.clear();
         }
     }
 
-    /**
-     * Salva EXATAMENTE o conteúdo atual da lista.
-     */
-    private static void salvarNoArquivo() {
-        try {
-            Path arquivo = getArquivoMensagens();
+    // ============================================================
+    // SALVAR
+    // ============================================================
 
-            Path diretorio = arquivo.getParent();
+    private static synchronized boolean salvarNoArquivo() {
+
+        Path arquivo =
+                getArquivoMensagens();
+
+        try {
+
+            Path diretorio =
+                    arquivo.getParent();
 
             if (diretorio != null) {
-                Files.createDirectories(diretorio);
+
+                Files.createDirectories(
+                        diretorio
+                );
             }
 
             Files.write(
                     arquivo,
                     MESSAGES,
-                    StandardCharsets.UTF_8
+                    StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.WRITE
             );
 
-            System.out.println("ARQUIVO SALVO COM SUCESSO:");
-            System.out.println(arquivo.toAbsolutePath());
-            System.out.println("CONTEUDO:");
-            System.out.println(Files.readAllLines(
-                    arquivo,
-                    StandardCharsets.UTF_8
-            ));
+            return true;
 
-        } catch (IOException e) {
-            System.err.println("ERRO AO SALVAR:");
-            e.printStackTrace();
+        } catch (IOException error) {
+
+            System.err.println(
+                    "Não foi possível salvar as mensagens: "
+                            + error.getMessage()
+            );
+
+            return false;
         }
     }
+
+    // ============================================================
+    // LOCAL DO ARQUIVO
+    // ============================================================
 
     private static Path getArquivoMensagens() {
 
-        String appData = System.getenv("APPDATA");
+        String appData =
+                System.getenv("APPDATA");
 
         Path baseDirectory;
 
-        if (appData == null || appData.isBlank()) {
-            baseDirectory = Path.of(
-                    System.getProperty("user.home"),
-                    ".intranet-adm"
-            );
+        if (appData == null
+                || appData.isBlank()) {
+
+            baseDirectory =
+                    Path.of(
+                            System.getProperty(
+                                    "user.home"
+                            ),
+                            ".intranet-adm"
+                    );
+
         } else {
-            baseDirectory = Path.of(
-                    appData,
-                    "Intranet-IDAM"
-            );
+
+            baseDirectory =
+                    Path.of(
+                            appData,
+                            "Intranet-IDAM"
+                    );
         }
 
-        return baseDirectory.resolve("daily-messages.json");
+        return baseDirectory.resolve(
+                "daily-messages.json"
+        );
     }
 
-    public static List<String> getMessages() {
+    // ============================================================
+    // LISTAR MENSAGENS
+    // ============================================================
+
+    public static synchronized List<String> getMessages() {
+
         return Collections.unmodifiableList(
                 new ArrayList<>(MESSAGES)
         );
     }
 
-    public static void addMessage(String message) {
+    // ============================================================
+    // ADICIONAR
+    // ============================================================
+
+    public static synchronized void addMessage(
+            String message
+    ) {
 
         if (message == null) {
             return;
         }
 
-        String cleanMessage = message.trim();
+        String cleanMessage =
+                message.trim();
 
         if (cleanMessage.isEmpty()) {
             return;
@@ -133,103 +198,133 @@ public final class DailyMessages {
             return;
         }
 
-        MESSAGES.add(cleanMessage);
-
-        salvarNoArquivo();
-    }
-
-    /**
-     * Remove a mensagem e sobrescreve o JSON.
-     */
-    public static boolean removeMessage(String message) {
-
-        if (message == null || message.isBlank()) {
-            return false;
-        }
-
-        String mensagem = message.trim();
-
-        System.out.println("=================================");
-        System.out.println("REMOVENDO MENSAGEM");
-        System.out.println("Mensagem: [" + mensagem + "]");
-        System.out.println("Antes: " + MESSAGES);
-
-        boolean removido = MESSAGES.removeIf(
-                item -> item != null
-                        && item.trim().equals(mensagem)
+        MESSAGES.add(
+                cleanMessage
         );
 
-        System.out.println("Removido: " + removido);
-        System.out.println("Depois: " + MESSAGES);
+        if (!salvarNoArquivo()) {
 
-        if (!removido) {
-            System.out.println("Mensagem não encontrada.");
+            // Reverte a alteração caso não consiga salvar.
+            MESSAGES.remove(
+                    cleanMessage
+            );
+        }
+    }
+
+    // ============================================================
+    // REMOVER
+    // ============================================================
+
+    public static synchronized boolean removeMessage(
+            String message
+    ) {
+
+        if (message == null
+                || message.isBlank()) {
+
             return false;
         }
 
-        System.out.println("ARQUIVO QUE SERÁ ALTERADO:");
-        System.out.println(getArquivoMensagens().toAbsolutePath());
-        salvarNoArquivo();
+        String mensagem =
+                message.trim();
 
-        // Confirma o conteúdo realmente escrito no disco
-        try {
-            Path arquivo = getArquivoMensagens();
+        int indiceEncontrado = -1;
 
-            List<String> arquivoDepois =
-                    Files.readAllLines(
-                            arquivo,
-                            StandardCharsets.UTF_8
-                    );
+        for (
+                int i = 0;
+                i < MESSAGES.size();
+                i++
+        ) {
 
-            System.out.println("CONFIRMAÇÃO DO ARQUIVO:");
-            System.out.println(arquivoDepois);
+            String atual =
+                    MESSAGES.get(i);
 
-        } catch (IOException e) {
-            System.err.println(
-                    "Erro ao verificar arquivo após exclusão: "
-                            + e.getMessage()
-            );
+            if (
+                    atual != null
+                            && atual.trim()
+                            .equals(mensagem)
+            ) {
+
+                indiceEncontrado = i;
+                break;
+            }
         }
 
-        System.out.println("=================================");
+        if (indiceEncontrado == -1) {
+            return false;
+        }
+
+        String removida =
+                MESSAGES.remove(
+                        indiceEncontrado
+                );
+
+        if (!salvarNoArquivo()) {
+
+            // Restaura a mensagem se o arquivo não puder ser salvo.
+            MESSAGES.add(
+                    indiceEncontrado,
+                    removida
+            );
+
+            return false;
+        }
 
         return true;
     }
 
-    public static void clearMessages() {
+    // ============================================================
+    // LIMPAR
+    // ============================================================
+
+    public static synchronized void clearMessages() {
+
+        List<String> backup =
+                new ArrayList<>(
+                        MESSAGES
+                );
 
         MESSAGES.clear();
 
-        salvarNoArquivo();
+        if (!salvarNoArquivo()) {
+
+            MESSAGES.addAll(
+                    backup
+            );
+        }
     }
 
-    public static int getMessageCount() {
+    // ============================================================
+    // QUANTIDADE
+    // ============================================================
+
+    public static synchronized int getMessageCount() {
+
         return MESSAGES.size();
     }
 
-    public static String getMessageOfTheDay() {
+    // ============================================================
+    // MENSAGEM DO DIA
+    // ============================================================
+
+    public static synchronized String getMessageOfTheDay() {
 
         if (MESSAGES.isEmpty()) {
-            return "Nenhuma mensagem cadastrada.";
+
+            return DEFAULT_MESSAGE;
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate hoje =
+                LocalDate.now();
 
-        String dateKey =
-                today.getYear()
-                        + "-"
-                        + today.getMonthValue()
-                        + "-"
-                        + today.getDayOfMonth();
 
-        int total = 0;
+        int indice =
+                (hoje.getYear()
+                        + hoje.getDayOfYear())
+                        % MESSAGES.size();
 
-        for (char character : dateKey.toCharArray()) {
-            total += character;
-        }
-
-        int index = total % MESSAGES.size();
-
-        return MESSAGES.get(index);
+        return MESSAGES.get(
+                indice
+        );
     }
 }

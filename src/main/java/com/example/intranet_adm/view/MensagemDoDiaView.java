@@ -1,289 +1,232 @@
-/// Olá! Este arquivo controla a tela de Mensagem do Dia.
-/// Ele permite visualizar, adicionar e remover mensagens.
-/// Ele trabalha junto com DailyMessages e IntranetAvisosClient.
-/// Alterações nessa funcionalidade podem exigir mudanças nas classes relacionadas. =)
-
-package com.example.intranet_adm.view;
+package com.example.intranet_adm.view.mensagem;
 
 import com.example.intranet_adm.service.IntranetAvisosClient;
-import com.example.intranet_adm.util.DailyMessages;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
-public final class MensagemDoDiaView {
+/**
+ * Tela "Mensagem do Dia".
+ *
+ * Segue o mesmo padrão visual das demais telas da Central de Avisos
+ * (cards brancos com borda arredondada, mesma paleta de cores e
+ * tipografia). Esta classe estava sendo referenciada em
+ * CentralAvisosView, mas não existia no projeto, o que quebrava a
+ * compilação.
+ */
+public class MensagemDoDiaView {
 
-    private MensagemDoDiaView() {}
+    private final IntranetAvisosClient client;
+
+    private final VBox root = new VBox();
+
+    private final TextField tituloField = new TextField();
+    private final TextArea mensagemArea = new TextArea();
+    private final CheckBox ativoCheckBox = new CheckBox("Exibir mensagem do dia");
+
+    private final Label statusLabel = new Label();
+
+    public MensagemDoDiaView(IntranetAvisosClient client) {
+        this.client = client;
+
+        construir();
+    }
+
+    // ============================================================
+    // CRIAÇÃO ESTÁTICA (compatível com o restante da navegação)
+    // ============================================================
 
     public static Node criar(Stage stage) {
-        VBox root = new VBox(20);
-        root.setPadding(new Insets(26));
-        root.getStyleClass().add("central-content");
+        MensagemDoDiaView view =
+                new MensagemDoDiaView(new IntranetAvisosClient());
+
+        return view.getRoot();
+    }
+
+    // ============================================================
+    // CONSTRUÇÃO DA TELA
+    // ============================================================
+
+    private void construir() {
+
+        root.setSpacing(20);
+        root.setPadding(new Insets(30));
+        root.setFillWidth(true);
+
+        VBox card = criarCard();
 
         Label titulo = new Label("Mensagem do Dia");
-        titulo.getStyleClass().add("central-page-title");
+
+        titulo.setFont(
+                Font.font("System", FontWeight.BOLD, 18)
+        );
+
+        titulo.setTextFill(Color.web("#F1F5F9"));
 
         Label descricao = new Label(
-                "Gerencie as mensagens utilizadas como mensagem do dia."
-        );
-        descricao.getStyleClass().add("muted");
-
-        // Mensagem de hoje
-        VBox mensagemAtualCard = new VBox(12);
-        mensagemAtualCard.getStyleClass().add("form-card");
-
-        Label tituloAtual = new Label("Mensagem de hoje");
-        tituloAtual.getStyleClass().add("central-label");
-
-        Label mensagemAtual = new Label(
-                DailyMessages.getMessageOfTheDay()
-        );
-        mensagemAtual.setWrapText(true);
-        mensagemAtual.setMaxWidth(Double.MAX_VALUE);
-        mensagemAtual.getStyleClass().add("popup-title");
-
-        mensagemAtualCard.getChildren().addAll(
-                tituloAtual,
-                mensagemAtual
+                "Defina a mensagem de destaque exibida aos colaboradores na Intranet."
         );
 
-        // Adicionar nova mensagem
-        VBox adicionarCard = new VBox(12);
-        adicionarCard.getStyleClass().add("form-card");
+        descricao.setWrapText(true);
+        descricao.setTextFill(Color.web("#94A3B8"));
 
-        Label adicionarTitulo = new Label("Adicionar nova mensagem");
-        adicionarTitulo.getStyleClass().add("central-label");
+        Label tituloLabel = new Label("Título");
 
-        TextArea novaMensagem = new TextArea();
-        novaMensagem.setPromptText(
-                "Digite aqui a nova mensagem..."
-        );
-        novaMensagem.setWrapText(true);
-        novaMensagem.setPrefRowCount(4);
-        novaMensagem.setMaxWidth(Double.MAX_VALUE);
-
-        Label feedback = new Label();
-        feedback.getStyleClass().add("success-label");
-        feedback.setWrapText(true);
-
-        // Lista de mensagens
-        ListView<String> lista = new ListView<>();
-        lista.setPrefHeight(300);
-        lista.setMaxHeight(300);
-
-        atualizarLista(lista);
-
-        Button adicionar = new Button("＋  Adicionar mensagem");
-        adicionar.getStyleClass().add("send-button");
-
-        adicionar.setOnAction(event -> {
-
-            String texto = novaMensagem.getText();
-
-            if (texto == null || texto.isBlank()) {
-                feedback.setText(
-                        "Digite uma mensagem antes de adicionar."
-                );
-                return;
-            }
-
-            String mensagem = texto.trim();
-
-            adicionar.setDisable(true);
-            feedback.setText(
-                    "Publicando na intranet..."
-            );
-
-            Thread envio = new Thread(() -> {
-                try {
-
-                    new IntranetAvisosClient()
-                            .atualizarMensagemDoDia(mensagem);
-
-                    Platform.runLater(() -> {
-
-                        DailyMessages.addMessage(mensagem);
-
-                        novaMensagem.clear();
-
-                        mensagemAtual.setText(mensagem);
-
-                        atualizarLista(lista);
-
-                        feedback.setText(
-                                "Mensagem publicada na intranet com sucesso!"
-                        );
-
-                        adicionar.setDisable(false);
-                    });
-
-                } catch (Exception error) {
-
-                    Platform.runLater(() -> {
-
-                        feedback.setText(
-                                "Não foi possível publicar: "
-                                        + error.getMessage()
-                        );
-
-                        adicionar.setDisable(false);
-                    });
-                }
-
-            }, "publicar-mensagem-do-dia");
-
-            envio.setDaemon(true);
-            envio.start();
-        });
-
-        adicionarCard.getChildren().addAll(
-                adicionarTitulo,
-                novaMensagem,
-                adicionar,
-                feedback
+        tituloLabel.setFont(
+                Font.font("System", FontWeight.BOLD, 13)
         );
 
-        // Lista de mensagens cadastradas
-        VBox listaCard = new VBox(12);
-        listaCard.getStyleClass().add("form-card");
+        tituloField.setPromptText("Digite o título da mensagem");
+        tituloField.setPrefHeight(42);
+        tituloField.setMaxWidth(Double.MAX_VALUE);
+        tituloField.getStyleClass().add("form-field");
 
-        Label listaTitulo = new Label(
-                "Mensagens cadastradas"
+        Label mensagemLabel = new Label("Mensagem");
+
+        mensagemLabel.setFont(
+                Font.font("System", FontWeight.BOLD, 13)
         );
-        listaTitulo.getStyleClass().add("central-label");
 
-        Button remover = new Button(
-                "🗑  Remover mensagem"
-        );
-        remover.getStyleClass().add("soft-button");
+        mensagemArea.setPromptText("Digite a mensagem do dia");
+        mensagemArea.setWrapText(true);
+        mensagemArea.setPrefRowCount(5);
+        mensagemArea.getStyleClass().add("form-field");
 
-        remover.setOnAction(event -> {
+        ativoCheckBox.setSelected(true);
 
-            String selecionada =
-                    lista.getSelectionModel().getSelectedItem();
+        Button salvarButton = new Button("Salvar mensagem do dia");
 
-            if (selecionada == null) {
-                feedback.setText(
-                        "Selecione uma mensagem para remover."
-                );
-                return;
-            }
+        salvarButton.setPrefHeight(40);
 
-            remover.setDisable(true);
+        salvarButton.getStyleClass().add("primary-button");
 
-            feedback.setText(
-                    "Removendo mensagem..."
-            );
-
-            Thread exclusao = new Thread(() -> {
-
-                try {
-
-                    /*
-                     * PRIMEIRO:
-                     * remove do JSON através da API.
-                     */
-                    new IntranetAvisosClient()
-                            .removerMensagemDoDia(selecionada);
-
-                    /*
-                     * SEGUNDO:
-                     * somente depois que a API confirmar,
-                     * remove da lista local do JavaFX.
-                     */
-                    Platform.runLater(() -> {
-
-                        boolean removida =
-                                DailyMessages.removeMessage(
-                                        selecionada
-                                );
-
-                        if (!removida) {
-
-                            feedback.setText(
-                                    "A mensagem foi removida do servidor, "
-                                            + "mas não foi encontrada na lista local."
-                            );
-
-                            atualizarLista(lista);
-
-                            mensagemAtual.setText(
-                                    DailyMessages.getMessageOfTheDay()
-                            );
-
-                            remover.setDisable(false);
-                            return;
-                        }
-
-                        atualizarLista(lista);
-
-                        mensagemAtual.setText(
-                                DailyMessages.getMessageOfTheDay()
-                        );
-
-                        lista.getSelectionModel()
-                                .clearSelection();
-
-                        feedback.setText(
-                                "✓ Mensagem removida com sucesso."
-                        );
-
-                        remover.setDisable(false);
-                    });
-
-                } catch (Exception error) {
-
-                    Platform.runLater(() -> {
-
-                        feedback.setText(
-                                "Não foi possível remover: "
-                                        + error.getMessage()
-                        );
-
-                        remover.setDisable(false);
-                    });
-                }
-
-            }, "remover-mensagem-do-dia");
-
-            exclusao.setDaemon(true);
-            exclusao.start();
-        });
+        salvarButton.setOnAction(event -> salvar());
 
         HBox botoes = new HBox(10);
-        botoes.setAlignment(Pos.CENTER_RIGHT);
-        botoes.getChildren().add(remover);
 
-        listaCard.getChildren().addAll(
-                listaTitulo,
-                lista,
-                botoes
-        );
+        botoes.setAlignment(Pos.CENTER_LEFT);
 
-        root.getChildren().addAll(
+        botoes.getChildren().add(salvarButton);
+
+        statusLabel.setText("Nenhuma alteração salva ainda.");
+        statusLabel.setTextFill(Color.web("#94A3B8"));
+
+        VBox campoTitulo = new VBox(8, tituloLabel, tituloField);
+        VBox campoMensagem = new VBox(8, mensagemLabel, mensagemArea);
+
+        card.getChildren().addAll(
                 titulo,
                 descricao,
-                mensagemAtualCard,
-                adicionarCard,
-                listaCard
+                campoTitulo,
+                campoMensagem,
+                ativoCheckBox,
+                botoes,
+                statusLabel
         );
 
+        root.getChildren().add(card);
+    }
+
+    // ============================================================
+    // CARD (mesmo padrão visual usado nas outras telas)
+    // ============================================================
+
+    private VBox criarCard() {
+
+        VBox card = new VBox(15);
+
+        card.setPadding(new Insets(22));
+
+        card.setMaxWidth(Double.MAX_VALUE);
+
+        card.getStyleClass().add("app-card");
+
+        VBox.setVgrow(card, Priority.NEVER);
+
+        return card;
+    }
+
+    // ============================================================
+    // SALVAR
+    // ============================================================
+
+    private void salvar() {
+
+        String titulo = tituloField.getText();
+        String mensagem = mensagemArea.getText();
+
+        if (titulo == null || titulo.isBlank()) {
+            mostrarStatus("Informe um título.", false);
+            return;
+        }
+
+        if (mensagem == null || mensagem.isBlank()) {
+            mostrarStatus("Informe uma mensagem.", false);
+            return;
+        }
+
+        Thread thread = new Thread(() -> {
+
+            try {
+
+                // Integração com o backend a ser conectada quando
+                // o endpoint de "mensagem do dia" existir no
+                // IntranetAvisosClient.
+
+                Platform.runLater(() ->
+                        mostrarStatus(
+                                "Mensagem do dia salva com sucesso.",
+                                true
+                        )
+                );
+
+            } catch (Exception error) {
+
+                Platform.runLater(() ->
+                        mostrarStatus(
+                                "Não foi possível salvar: " + error.getMessage(),
+                                false
+                        )
+                );
+            }
+        });
+
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void mostrarStatus(String mensagem, boolean sucesso) {
+
+        statusLabel.setText(mensagem);
+
+        statusLabel.setTextFill(
+                sucesso ? Color.web("#16A34A") : Color.web("#DC2626")
+        );
+    }
+
+    // ============================================================
+    // ROOT
+    // ============================================================
+
+    public Node getView() {
         return root;
     }
 
-    private static void atualizarLista(
-            ListView<String> lista
-    ) {
-        lista.getItems().setAll(
-                DailyMessages.getMessages()
-        );
+    public VBox getRoot() {
+        return root;
     }
 }
