@@ -29,7 +29,7 @@ import java.util.List;
 
 public final class CentralAvisosView {
 
-    private static final int SIDEBAR_WIDTH = 252;
+    private static final int SIDEBAR_WIDTH = 232;
     private static final int CARD_SPACING = 16;
 
     private final BorderPane root =
@@ -48,6 +48,8 @@ public final class CentralAvisosView {
     private final IntranetAvisosClient client;
 
     private final AvisoService avisoService;
+    private MonitorAcessosView monitorView;
+    private AvisoFormView formView;
 
     // ============================================================
     // CONSTRUTOR
@@ -80,6 +82,7 @@ public final class CentralAvisosView {
 
         configurarLayout(stage);
 
+        stage.setOnHidden(event -> { if (monitorView != null) monitorView.pararAtualizacaoAutomatica(); });
         novoAviso();
 
         return root;
@@ -305,7 +308,7 @@ public final class CentralAvisosView {
     // ============================================================
 
     private VBox criarIdentidade() {
-        Label titulo = new Label("CENTRAL DE\nCOMUNICAÇÃO");
+        Label titulo = new Label("CENTRAL\nComunicação interna");
         titulo.getStyleClass().add("central-brand");
         VBox identidade = new VBox(titulo);
         identidade.getStyleClass().add("brand-block");
@@ -395,7 +398,7 @@ public final class CentralAvisosView {
 
         Label status =
                 new Label(
-                        "●  Administrador\nOnline\n\nVersão 1.0.0"
+                        "INTRANET  /  ADMINISTRAÇÃO\n\nCentral de Avisos · 1.0"
                 );
 
         status.getStyleClass()
@@ -412,6 +415,7 @@ public final class CentralAvisosView {
             String titulo
     ) {
 
+        if (monitorView != null) { monitorView.pararAtualizacaoAutomatica(); monitorView = null; }
         content.getChildren()
                 .clear();
 
@@ -490,8 +494,8 @@ public final class CentralAvisosView {
                 "Novo Aviso"
         );
 
-        AvisoFormView avisoFormView =
-                new AvisoFormView();
+        if (formView == null) formView = new AvisoFormView(client, avisoService);
+        AvisoFormView avisoFormView = formView;
 
         content.getChildren()
                 .add(
@@ -551,7 +555,7 @@ public final class CentralAvisosView {
                 "Acessando Agora"
         );
 
-        MonitorAcessosView monitorView =
+        monitorView =
                 new MonitorAcessosView(
                         client
                 );

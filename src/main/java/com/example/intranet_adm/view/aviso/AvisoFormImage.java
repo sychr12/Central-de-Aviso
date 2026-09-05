@@ -34,7 +34,7 @@ public class AvisoFormImage {
 
         nomeArquivo = new Label("Nenhuma imagem selecionada");
 
-        selecionarButton = new Button("Selecionar imagem");
+        selecionarButton = new Button("Selecionar arquivo");
         removerButton = new Button("Remover imagem");
 
         selecionarButton.getStyleClass().add("secondary-button");
@@ -84,12 +84,13 @@ public class AvisoFormImage {
 
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(
-                        "Imagens",
+                        "Imagens e documentos",
                         "*.png",
                         "*.jpg",
                         "*.jpeg",
                         "*.gif",
-                        "*.webp"
+                        "*.webp",
+                        "*.pdf"
                 )
         );
 
@@ -101,11 +102,11 @@ public class AvisoFormImage {
 
         imagemSelecionada = arquivo.toPath();
 
-        preview.setImage(
-                new Image(
-                        arquivo.toURI().toString()
-                )
-        );
+        if (!arquivo.getName().toLowerCase().endsWith(".pdf")) {
+            preview.setImage(new Image(arquivo.toURI().toString()));
+        } else {
+            preview.setImage(null);
+        }
 
         nomeArquivo.setText(
                 arquivo.getName()

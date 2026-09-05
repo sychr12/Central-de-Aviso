@@ -37,6 +37,7 @@ public class AvisoService {
     private final Path storageFile;
 
     private int proximoId = 1;
+    private boolean falhaCarregamento;
 
     // ============================================================
     // CONSTRUTORES
@@ -162,6 +163,7 @@ public class AvisoService {
             return false;
         }
 
+        int indiceOriginal = avisos.indexOf(removido);
         avisos.remove(removido);
 
         try {
@@ -361,6 +363,7 @@ public class AvisoService {
             }
 
         } catch (IOException | RuntimeException error) {
+            falhaCarregamento = true;
 
             System.err.println(
                     "Não foi possível carregar o histórico de avisos: "
@@ -385,6 +388,7 @@ public class AvisoService {
      */
     private synchronized void salvar()
             throws IOException {
+        if (falhaCarregamento) throw new IOException("Histórico ilegível. O arquivo original foi preservado.");
 
         Path diretorio =
                 storageFile.getParent();

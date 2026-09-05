@@ -5,6 +5,7 @@ import com.example.intranet_adm.model.Popup;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -75,6 +76,11 @@ public class IntranetAvisosClient {
                     "png", "image/png",
                     "gif", "image/gif",
                     "webp", "image/webp"
+                    ,"pdf", "application/pdf"
+                    ,"mp4", "video/mp4"
+                    ,"webm", "video/webm"
+                    ,"ogv", "video/ogg"
+                    ,"mov", "video/quicktime"
             );
 
     private final HttpClient client =
@@ -649,7 +655,24 @@ public class IntranetAvisosClient {
                             "Nenhuma"
                     );
 
-            return new Popup(
+            // A Intranet salva os anexos em /uploads/... e devolve esse caminho
+            // relativo. A Central precisa de uma URL absoluta para conseguir
+            // carregar a imagem no histórico e no popup.
+            String imagem = extrairCampoTexto(objeto, "imageUrl");
+            if (imagem != null && imagem.startsWith("/")) {
+                imagem = baseUrl().replaceFirst("/+$", "") + imagem;
+            }
+            if (imagem == null || imagem.isBlank()) {
+                imagem = extrairCampoTexto(objeto, "imageData");
+            }
+            if (imagem == null) {
+                String base64 = extrairCampoTexto(objeto, "imageBase64");
+                String mime = extrairCampoTexto(objeto, "imageMimeType");
+                if (mime == null || mime.isBlank()) mime = "image/png";
+                if (base64 != null && !base64.isBlank()) imagem = "data:" + mime + ";base64," + base64;
+            }
+
+            Popup popup = new Popup(
                     id != null
                             ? id
                             : String.valueOf(
@@ -662,6 +685,8 @@ public class IntranetAvisosClient {
                     tamanho,
                     paginas
             );
+            popup.setImagem(imagem);
+            return popup;
 
         } catch (Exception error) {
 
@@ -791,6 +816,15 @@ public class IntranetAvisosClient {
         );
     }
 
+    public List<String[]> buscarVisitantes() throws IOException, InterruptedException {
+        String body = enviarRequisicao(HttpRequest.newBuilder(URI.create(presenceEndpoint())).timeout(Duration.ofSeconds(8)).GET()).body();
+        List<String[]> result = new ArrayList<>();
+        Pattern item = Pattern.compile("\\{\\s*\\\"nome\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"departamento\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"pagina\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"tempo\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"navegador\\\"\\s*:\\s*\\\"([^\\\"]*)\\\"", Pattern.DOTALL);
+        Matcher matcher = item.matcher(body);
+        while (matcher.find()) result.add(new String[]{matcher.group(1), matcher.group(2), matcher.group(3), matcher.group(4), matcher.group(5)});
+        return result;
+    }
+
     // ============================================================
     // MENSAGEM DO DIA
     // ============================================================
@@ -901,24 +935,26 @@ public class IntranetAvisosClient {
     // ============================================================
 
     public String checkServerStatus() {
+        return checkServerStatus(baseUrl());
+    }
+
+    public String checkServerStatus(String base) {
 
         try {
 
-            HttpRequest request =
+            HttpRequest.Builder request =
                     HttpRequest.newBuilder(
-                                    URI.create(
-                                            endpoint()
-                                    )
+                                    URI.create(validarUrl(base).replaceFirst("/+$", "") + "/api/avisos")
                             )
                             .timeout(
                                     Duration.ofSeconds(3)
                             )
-                            .GET()
-                            .build();
+                            .GET();
+            adicionarTokenSeConfigurado(request);
 
             HttpResponse<String> response =
                     client.send(
-                            request,
+                            request.build(),
                             HttpResponse.BodyHandlers.ofString(
                                     StandardCharsets.UTF_8
                             )
@@ -979,6 +1015,13 @@ public class IntranetAvisosClient {
     // ============================================================
 
     public static String endpoint() {
+
+
+        // O endpoint padrão pertence ao servidor local do Intranet-IDAM.
+        // URLs antigas salvas no ambiente não devem redirecionar o envio.
+        if (System.getProperty("intranet.avisos.url") == null && System.getenv("INTRANET_AVISOS_URL") == null) {
+            return baseUrl() + "/api/avisos";
+        }
 
         String configured =
                 System.getProperty(
@@ -1050,24 +1093,70 @@ public class IntranetAvisosClient {
                     );
         }
 
-        if (configured == null ||
-                configured.isBlank()) {
-
-            configured =
-                    PREFERENCES.get(
-                            BASE_URL_PREFERENCE,
-                            null
-                    );
-        }
-
         String value =
                 configured == null ||
                         configured.isBlank()
-                        ? DEFAULT_BASE_URL
+                        ? PREFERENCES.get(BASE_URL_PREFERENCE, DEFAULT_BASE_URL)
                         : configured;
 
         return validarUrl(value)
                 .replaceFirst("/+$", "");
+    }
+
+    /** Adiciona uma frase ao daily-message.json através da API da Intranet. */
+    public void adicionarMensagemDoDia(String mensagem) throws IOException, InterruptedException {
+        if (mensagem == null || mensagem.isBlank()) {
+            throw new IllegalArgumentException("A mensagem do dia é obrigatória.");
+        }
+        String escaped = mensagem.trim().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n");
+        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl() + DAILY_MESSAGE_PATH))
+                .timeout(Duration.ofSeconds(8))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("{\"message\":\"" + escaped + "\"}"))
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new IOException("API recusou a mensagem (HTTP " + response.statusCode() + ")");
+        }
+    }
+
+    public List<String> listarMensagensDoDia() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl() + DAILY_MESSAGE_PATH)).GET().build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() / 100 != 2) throw new IOException("Falha ao listar mensagens (HTTP " + response.statusCode() + ")");
+        Matcher matcher = Pattern.compile("\\\"messages\\\"\\s*:\\s*\\[(.*?)\\]", Pattern.DOTALL).matcher(response.body());
+        List<String> result = new ArrayList<>();
+        if (!matcher.find()) return result;
+        Matcher item = Pattern.compile("\\\"((?:\\\\.|[^\\\"])*)\\\"").matcher(matcher.group(1));
+        while (item.find()) result.add(item.group(1).replace("\\\\n", "\\n").replace("\\\\\"", "\\\""));
+        return result;
+    }
+
+    public void excluirMensagemDoDia(String mensagem) throws IOException, InterruptedException { alterarMensagemDoDia("DELETE", mensagem, null); }
+    public void editarMensagemDoDia(String antiga, String nova) throws IOException, InterruptedException { alterarMensagemDoDia("PUT", antiga, nova); }
+
+    private void alterarMensagemDoDia(String metodo, String antiga, String nova) throws IOException, InterruptedException {
+        String a = jsonEscape(antiga), n = nova == null ? "" : jsonEscape(nova);
+        String body = metodo.equals("DELETE") ? "{\"message\":\"" + a + "\"}" : "{\"oldMessage\":\"" + a + "\",\"message\":\"" + n + "\"}";
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl() + DAILY_MESSAGE_PATH)).header("Content-Type", "application/json");
+        HttpRequest request = builder.method(metodo, HttpRequest.BodyPublishers.ofString(body)).build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() / 100 != 2) throw new IOException("Falha ao alterar mensagem (HTTP " + response.statusCode() + ")");
+    }
+
+    private static String jsonEscape(String value) { return value.trim().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n"); }
+
+    private static String detectarServidorLocal() {
+        String host = "localhost";
+        try { host = InetAddress.getLocalHost().getHostAddress(); } catch (Exception ignored) { }
+        for (int porta = 3005; porta >= 3000; porta--) {
+            for (String endereco : new String[]{"localhost", host}) try {
+                HttpRequest request = HttpRequest.newBuilder(URI.create("http://" + endereco + ":" + porta + "/api/avisos")).timeout(Duration.ofMillis(500)).GET().build();
+                HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() >= 200 && response.statusCode() < 500) return "http://" + endereco + ":" + porta;
+            } catch (Exception ignored) { }
+        }
+        return DEFAULT_BASE_URL;
     }
 
     public static void configurarBaseUrl(

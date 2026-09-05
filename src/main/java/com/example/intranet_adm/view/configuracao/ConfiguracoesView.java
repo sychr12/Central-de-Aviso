@@ -46,14 +46,12 @@ public class ConfiguracoesView {
         );
 
         descricao.setFont(Font.font("System", 14));
-        descricao.setTextFill(Color.web("#94A3B8"));
+        descricao.setTextFill(Color.web("#64748B"));
 
         VBox conexaoCard = criarCardConexao();
         VBox sistemaCard = criarCardSistema();
 
         root.getChildren().addAll(
-                titulo,
-                descricao,
                 conexaoCard,
                 sistemaCard
         );
@@ -75,7 +73,7 @@ public class ConfiguracoesView {
                 )
         );
 
-        titulo.setTextFill(Color.web("#F1F5F9"));
+        titulo.setTextFill(Color.web("#172B4D"));
 
         return titulo;
     }
@@ -98,7 +96,7 @@ public class ConfiguracoesView {
                 )
         );
 
-        titulo.setTextFill(Color.web("#F1F5F9"));
+        titulo.setTextFill(Color.web("#172B4D"));
 
         Label descricao = new Label(
                 "Defina o endereço utilizado pela Central de Avisos para "
@@ -106,7 +104,7 @@ public class ConfiguracoesView {
         );
 
         descricao.setWrapText(true);
-        descricao.setTextFill(Color.web("#94A3B8"));
+        descricao.setTextFill(Color.web("#64748B"));
 
         Label urlLabel = new Label("URL da Intranet-IDAM");
 
@@ -165,7 +163,7 @@ public class ConfiguracoesView {
         statusLabel.setText("Conexão não testada.");
 
         statusLabel.setTextFill(
-                Color.web("#94A3B8")
+                Color.web("#64748B")
         );
 
         VBox campo = new VBox(8);
@@ -205,7 +203,7 @@ public class ConfiguracoesView {
         );
 
         titulo.setTextFill(
-                Color.web("#F1F5F9")
+                Color.web("#172B4D")
         );
 
         Label aplicacao = criarInformacao(
@@ -231,7 +229,7 @@ public class ConfiguracoesView {
         observacao.setWrapText(true);
 
         observacao.setTextFill(
-                Color.web("#94A3B8")
+                Color.web("#64748B")
         );
 
         card.getChildren().addAll(
@@ -266,7 +264,7 @@ public class ConfiguracoesView {
         );
 
         label.setTextFill(
-                Color.web("#CBD5E1")
+                Color.web("#334155")
         );
 
         return label;
@@ -346,64 +344,23 @@ public class ConfiguracoesView {
     // ============================================================
 
     private void testarConexao() {
-
         String url = baseUrlField.getText();
-
-        if (url == null || url.isBlank()) {
-
-            mostrarStatus(
-                    "Informe uma URL antes de testar.",
-                    false
-            );
-
-            return;
-        }
-
-        try {
-
-            IntranetAvisosClient.configurarBaseUrl(
-                    url.trim()
-            );
-
-            statusLabel.setText(
-                    "Testando conexão..."
-            );
-
-            statusLabel.setTextFill(
-                Color.web("#94A3B8")
-            );
-
-            String status =
-                    client.checkServerStatus();
-
-            if ("online".equalsIgnoreCase(status)) {
-
-                mostrarStatus(
-                        "Servidor online e acessível.",
-                        true
-                );
-
-            } else {
-
-                mostrarStatus(
-                        "Servidor offline: " + status,
-                        false
-                );
-            }
-
-        } catch (Exception error) {
-
-            mostrarStatus(
-                    "Erro ao testar conexão: "
-                            + error.getMessage(),
-                    false
-            );
-        }
+        if (url == null || url.isBlank()) { mostrarStatus("Informe uma URL antes de testar.", false); return; }
+        root.setDisable(true);
+        statusLabel.setText("Testando conexão…");
+        javafx.concurrent.Task<String> task = new javafx.concurrent.Task<>() {
+            @Override protected String call() { return client.checkServerStatus(url.trim()); }
+        };
+        task.setOnSucceeded(event -> {
+            root.setDisable(false);
+            boolean online = "online".equals(task.getValue());
+            mostrarStatus(online ? "Servidor acessível. Salve para usar este endereço." : "Não foi possível conectar: " + task.getValue(), online);
+        });
+        task.setOnFailed(event -> { root.setDisable(false); mostrarStatus("Falha ao testar conexão.", false); });
+        Thread worker = new Thread(task, "testar-conexao");
+        worker.setDaemon(true);
+        worker.start();
     }
-
-    // ============================================================
-    // STATUS
-    // ============================================================
 
     private void mostrarStatus(
             String mensagem,

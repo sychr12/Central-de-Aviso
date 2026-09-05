@@ -14,6 +14,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.control.Separator;
+import java.util.List;
+import java.util.ArrayList;
+import javafx.scene.paint.Paint;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -34,11 +38,12 @@ public class MensagemDoDiaView {
 
     private final VBox root = new VBox();
 
-    private final TextField tituloField = new TextField();
     private final TextArea mensagemArea = new TextArea();
     private final CheckBox ativoCheckBox = new CheckBox("Exibir mensagem do dia");
 
     private final Label statusLabel = new Label();
+    private final VBox listaMensagens = new VBox(8);
+    private String mensagemEmEdicao;
 
     public MensagemDoDiaView(IntranetAvisosClient client) {
         this.client = client;
@@ -64,7 +69,7 @@ public class MensagemDoDiaView {
     private void construir() {
 
         root.setSpacing(20);
-        root.setPadding(new Insets(30));
+        root.setPadding(new Insets(0));
         root.setFillWidth(true);
 
         VBox card = criarCard();
@@ -75,25 +80,14 @@ public class MensagemDoDiaView {
                 Font.font("System", FontWeight.BOLD, 18)
         );
 
-        titulo.setTextFill(Color.web("#F1F5F9"));
+        titulo.setTextFill(Color.web("#172B4D"));
 
         Label descricao = new Label(
                 "Defina a mensagem de destaque exibida aos colaboradores na Intranet."
         );
 
         descricao.setWrapText(true);
-        descricao.setTextFill(Color.web("#94A3B8"));
-
-        Label tituloLabel = new Label("Título");
-
-        tituloLabel.setFont(
-                Font.font("System", FontWeight.BOLD, 13)
-        );
-
-        tituloField.setPromptText("Digite o título da mensagem");
-        tituloField.setPrefHeight(42);
-        tituloField.setMaxWidth(Double.MAX_VALUE);
-        tituloField.getStyleClass().add("form-field");
+        descricao.setTextFill(Color.web("#64748B"));
 
         Label mensagemLabel = new Label("Mensagem");
 
@@ -123,22 +117,23 @@ public class MensagemDoDiaView {
         botoes.getChildren().add(salvarButton);
 
         statusLabel.setText("Nenhuma alteração salva ainda.");
-        statusLabel.setTextFill(Color.web("#94A3B8"));
+        statusLabel.setTextFill(Color.web("#64748B"));
 
-        VBox campoTitulo = new VBox(8, tituloLabel, tituloField);
         VBox campoMensagem = new VBox(8, mensagemLabel, mensagemArea);
 
         card.getChildren().addAll(
                 titulo,
                 descricao,
-                campoTitulo,
                 campoMensagem,
                 ativoCheckBox,
                 botoes,
-                statusLabel
+                statusLabel,
+                new Label("Mensagens salvas"),
+                listaMensagens
         );
 
         root.getChildren().add(card);
+        carregarLista();
     }
 
     // ============================================================
@@ -166,26 +161,23 @@ public class MensagemDoDiaView {
 
     private void salvar() {
 
-        String titulo = tituloField.getText();
         String mensagem = mensagemArea.getText();
-
-        if (titulo == null || titulo.isBlank()) {
-            mostrarStatus("Informe um título.", false);
-            return;
-        }
 
         if (mensagem == null || mensagem.isBlank()) {
             mostrarStatus("Informe uma mensagem.", false);
             return;
         }
 
+        boolean ativo = ativoCheckBox.isSelected();
+        String conteudo = mensagem.trim();
+        root.setDisable(true);
+        statusLabel.setText("Salvando…");
         Thread thread = new Thread(() -> {
 
             try {
 
-                // Integração com o backend a ser conectada quando
-                // o endpoint de "mensagem do dia" existir no
-                // IntranetAvisosClient.
+                if (mensagemEmEdicao == null) client.adicionarMensagemDoDia(conteudo);
+                else { client.editarMensagemDoDia(mensagemEmEdicao, conteudo); mensagemEmEdicao = null; }
 
                 Platform.runLater(() ->
                         mostrarStatus(
@@ -193,6 +185,7 @@ public class MensagemDoDiaView {
                                 true
                         )
                 );
+                Platform.runLater(this::carregarLista);
 
             } catch (Exception error) {
 
@@ -202,9 +195,46 @@ public class MensagemDoDiaView {
                                 false
                         )
                 );
+            } finally {
+                Platform.runLater(() -> root.setDisable(false));
             }
         });
 
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void carregarLista() {
+        Thread thread = new Thread(() -> {
+            try {
+                List<String> mensagens = client.listarMensagensDoDia();
+                Platform.runLater(() -> {
+                    listaMensagens.getChildren().clear();
+                    List<String> recentesPrimeiro = new ArrayList<>(mensagens);
+                    java.util.Collections.reverse(recentesPrimeiro);
+                    for (String item : recentesPrimeiro) {
+                        Label texto = new Label(item); texto.setWrapText(true); texto.setMaxWidth(Double.MAX_VALUE); texto.setStyle("-fx-text-fill: #172B4D; -fx-font-size: 13px; -fx-font-weight: bold;"); HBox.setHgrow(texto, Priority.ALWAYS);
+                        Button editar = new Button("Editar"); editar.getStyleClass().add("secondary-button"); editar.setOnAction(e -> { mensagemEmEdicao = item; mensagemArea.setText(item); });
+                        Button excluir = new Button("Excluir"); excluir.getStyleClass().add("danger-button"); excluir.setOnAction(e -> excluirMensagem(item, excluir));
+                        HBox linha = new HBox(12, texto, editar, excluir); linha.setAlignment(Pos.CENTER_LEFT); linha.setPadding(new Insets(12)); linha.setStyle("-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #E2E8F0; -fx-border-radius: 10;");
+                        listaMensagens.getChildren().add(linha);
+                    }
+                });
+            } catch (Exception ignored) { }
+        }); thread.setDaemon(true); thread.start();
+    }
+
+    private void excluirMensagem(String item, Button botao) {
+        botao.setDisable(true);
+        Thread thread = new Thread(() -> {
+            try {
+                client.excluirMensagemDoDia(item);
+                Platform.runLater(this::carregarLista);
+            } catch (Exception ex) {
+                Platform.runLater(() -> mostrarStatus("Não foi possível excluir: " + ex.getMessage(), false));
+                Platform.runLater(() -> botao.setDisable(false));
+            }
+        });
         thread.setDaemon(true);
         thread.start();
     }

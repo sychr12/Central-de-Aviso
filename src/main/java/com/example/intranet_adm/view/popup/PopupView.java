@@ -7,10 +7,14 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.awt.Desktop;
+import java.net.URI;
 
 public class PopupView {
 
@@ -75,7 +79,7 @@ public class PopupView {
         VBox container = new VBox(20);
 
         container.setPadding(
-                new Insets(25)
+                new Insets(0)
         );
 
         container.setFillWidth(true);
@@ -105,7 +109,7 @@ public class PopupView {
         VBox cabecalho = new VBox(6);
 
         Label titulo = new Label(
-                "Gerenciamento de Popups"
+                "POPUPS"
         );
 
         titulo.getStyleClass().add(
@@ -113,7 +117,7 @@ public class PopupView {
         );
 
         Label descricao = new Label(
-                "Visualize, ative, desative ou exclua os avisos exibidos na intranet."
+                "Acompanhe, pesquise e gerencie os avisos publicados."
         );
 
         descricao.getStyleClass().add(
@@ -156,8 +160,6 @@ public class PopupView {
         );
 
         cabecalho.getChildren().addAll(
-                titulo,
-                descricao,
                 informacoes
         );
 
@@ -343,6 +345,8 @@ public class PopupView {
                 popup.isAtivo()
         );
 
+        Label anexo = criarIndicadorAnexo(popup.getImagem());
+
         Region espacador = new Region();
 
         HBox.setHgrow(
@@ -353,6 +357,7 @@ public class PopupView {
         cabecalho.getChildren().addAll(
                 titulo,
                 espacador,
+                anexo,
                 status
         );
 
@@ -369,6 +374,23 @@ public class PopupView {
         mensagem.getStyleClass().add(
                 "popup-message"
         );
+
+        ImageView miniatura = new ImageView();
+        miniatura.setFitWidth(92); miniatura.setFitHeight(58); miniatura.setPreserveRatio(true);
+        if (popup.getImagem() != null && !popup.getImagem().isBlank()) {
+            try {
+                // Carrega a miniatura de forma síncrona para ela já aparecer
+                // quando o histórico terminar de montar o card.
+                Image imagem = new Image(popup.getImagem(), 92, 58, true, true, false);
+                if (!imagem.isError()) {
+                    miniatura.setImage(imagem);
+                } else {
+                    System.err.println("Não foi possível carregar a imagem do popup: " + popup.getImagem());
+                }
+            } catch (Exception error) {
+                System.err.println("Erro ao carregar a imagem do popup: " + error.getMessage());
+            }
+        }
 
         // --------------------------------------------------------
         // INFORMAÇÕES
@@ -409,15 +431,53 @@ public class PopupView {
                 popup
         );
 
+        VBox conteudo = new VBox(8, mensagem);
+        if (popup.getImagem() != null && !popup.getImagem().isBlank() && !ehImagem(popup.getImagem())) {
+            String tipo = tipoAnexo(popup.getImagem());
+            Button abrirAnexo = new Button("Abrir " + tipo);
+            abrirAnexo.getStyleClass().add("secondary-button");
+            abrirAnexo.setOnAction(event -> abrirAnexo(popup.getImagem()));
+            conteudo.getChildren().add(abrirAnexo);
+        }
+        HBox resumo = new HBox(12, miniatura, conteudo);
         card.getChildren().addAll(
                 cabecalho,
-                mensagem,
+                resumo,
                 informacoes,
                 new Separator(),
                 acoes
         );
 
         return card;
+    }
+
+    private boolean ehImagem(String url) {
+        String valor = url.toLowerCase();
+        return valor.startsWith("data:image/") || valor.matches(".*\\.(png|jpe?g|gif|webp|bmp)(\\?.*)?$");
+    }
+
+    private String tipoAnexo(String url) {
+        String valor = url.toLowerCase();
+        if (valor.contains("pdf")) return "PDF";
+        if (valor.matches(".*\\.(mp4|webm|ogv|mov)(\\?.*)?$")) return "vídeo";
+        if (valor.matches(".*\\.(mp3|ogg|wav)(\\?.*)?$")) return "áudio";
+        return "anexo";
+    }
+
+    private void abrirAnexo(String url) {
+        try {
+            if (Desktop.isDesktopSupported()) Desktop.getDesktop().browse(URI.create(url));
+        } catch (Exception error) {
+            System.err.println("Não foi possível abrir o anexo: " + error.getMessage());
+        }
+    }
+
+    private Label criarIndicadorAnexo(String imagem) {
+        boolean possuiAnexo = imagem != null && !imagem.isBlank();
+        Label indicador = new Label(possuiAnexo ? "📎  ANEXO" : "");
+        indicador.getStyleClass().add(possuiAnexo ? "popup-attachment" : "popup-attachment-empty");
+        indicador.setTooltip(new Tooltip(possuiAnexo ? "Este popup possui uma imagem ou arquivo anexado." : ""));
+        return indicador;
     }
 
     // ============================================================

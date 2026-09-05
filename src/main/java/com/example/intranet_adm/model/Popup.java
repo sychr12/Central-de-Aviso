@@ -11,6 +11,7 @@ public class Popup {
     private String modelo;
     private String tamanho;
     private String paginas;
+    private String imagem;
 
     public Popup(
             String id,
@@ -81,6 +82,8 @@ public class Popup {
     public String getPaginas() {
         return paginas;
     }
+    public String getImagem() { return imagem; }
+    public void setImagem(String imagem) { this.imagem = imagem; }
 
     public void setPaginas(String paginas) {
         this.paginas = paginas;

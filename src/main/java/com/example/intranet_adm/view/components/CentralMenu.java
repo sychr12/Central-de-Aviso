@@ -279,7 +279,7 @@ public final class CentralMenu {
 
         Label status =
                 new Label(
-                        "●  Configure o servidor\n\n" +
+                        "●  Servidor online\n\n" +
                                 "Versão 1.0.0"
                 );
 

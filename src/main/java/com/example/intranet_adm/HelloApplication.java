@@ -33,10 +33,12 @@ public class HelloApplication extends Application {
                 .setGlobal();
 
         // Usando a view programática (recomendado)
-        Scene scene = new Scene(CentralAvisosView.criar(stage), 1180, 720);
+        Scene scene = new Scene(CentralAvisosView.criar(stage), 1280, 820);
         scene.getStylesheets().add(HelloApplication.class.getResource("style.css").toExternalForm());
 
-        stage.setTitle("Central de Avisos - Enviar Popup");
+        stage.setTitle("Central de Avisos | Comunicação interna");
+        stage.setMinWidth(1000);
+        stage.setMinHeight(680);
         stage.setScene(scene);
         stage.show();
     }

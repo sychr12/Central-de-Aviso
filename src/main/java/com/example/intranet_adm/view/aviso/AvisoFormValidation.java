@@ -27,21 +27,21 @@ public class AvisoFormValidation {
             return false;
         }
 
-        if (dates.getPublicarEm() != null
-                && dates.getExpirarEm() != null) {
-
+        try {
             LocalDateTime publicacao = dates.getPublicarEm();
             LocalDateTime expiracao = dates.getExpirarEm();
-
-            if (!expiracao.isAfter(publicacao)) {
-                mostrarErro(
-                        "Datas inválidas",
-                        "A data de expiração deve ser posterior à publicação."
-                );
-                return false;
+            LocalDateTime agora = LocalDateTime.now();
+            if (publicacao != null && !publicacao.isAfter(agora)) throw new IllegalArgumentException("A publicação agendada deve estar no futuro.");
+            if (expiracao != null && !expiracao.isAfter(publicacao == null ? agora : publicacao)) throw new IllegalArgumentException("A expiração deve ser posterior à publicação.");
+            String link = fields.getLink();
+            if (link != null) {
+                java.net.URI uri = java.net.URI.create(link);
+                if (uri.getHost() == null || !("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))) throw new IllegalArgumentException("Informe um link HTTP ou HTTPS válido.");
             }
+        } catch (RuntimeException error) {
+            mostrarErro("Revise os campos", error.getMessage());
+            return false;
         }
-
         return true;
     }
 

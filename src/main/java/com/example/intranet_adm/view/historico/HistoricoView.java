@@ -45,7 +45,7 @@ public class HistoricoView {
     private void construir() {
 
         root.setSpacing(20);
-        root.setPadding(new Insets(30));
+        root.setPadding(new Insets(0));
         root.setFillWidth(true);
 
         Label titulo = criarTitulo();
@@ -59,7 +59,7 @@ public class HistoricoView {
         );
 
         descricao.setTextFill(
-                Color.web("#94A3B8")
+                Color.web("#64748B")
         );
 
         HBox cabecalho = criarCabecalho();
@@ -90,12 +90,10 @@ public class HistoricoView {
 
         statusLabel.setText("");
         statusLabel.setTextFill(
-                Color.web("#94A3B8")
+                Color.web("#64748B")
         );
 
         root.getChildren().addAll(
-                titulo,
-                descricao,
                 cabecalho,
                 statusLabel,
                 scrollPane
@@ -121,7 +119,7 @@ public class HistoricoView {
         );
 
         titulo.setTextFill(
-                Color.web("#F1F5F9")
+                Color.web("#172B4D")
         );
 
         return titulo;
@@ -148,7 +146,7 @@ public class HistoricoView {
         );
 
         contadorLabel.setTextFill(
-                Color.web("#94A3B8")
+                Color.web("#64748B")
         );
 
         Region espacador = new Region();
@@ -162,6 +160,7 @@ public class HistoricoView {
                 new Button("Atualizar");
 
         atualizarButton.setPrefHeight(38);
+        atualizarButton.getStyleClass().add("secondary-button");
 
         atualizarButton.setOnAction(
                 event -> atualizar()
@@ -264,7 +263,7 @@ public class HistoricoView {
         );
 
         titulo.setTextFill(
-                Color.web("#F1F5F9")
+                Color.web("#172B4D")
         );
 
         // --------------------------------------------------------
@@ -318,7 +317,7 @@ public class HistoricoView {
         );
 
         informacoes.setTextFill(
-                Color.web("#94A3B8")
+                Color.web("#64748B")
         );
 
         // --------------------------------------------------------
@@ -411,7 +410,7 @@ public class HistoricoView {
         );
 
         titulo.setTextFill(
-                Color.web("#CBD5E1")
+                Color.web("#334155")
         );
 
         Label descricao = new Label(

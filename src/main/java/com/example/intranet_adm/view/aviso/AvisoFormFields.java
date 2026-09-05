@@ -112,14 +112,14 @@ public class AvisoFormFields {
     }
 
     private String corDoNivel(String nivel, boolean criticidade) {
-        if (nivel == null) return "#E2E8F0";
+        if (nivel == null) return "#334155";
         return switch (nivel) {
-            case "Informativa" -> "#60A5FA";
-            case "Baixa" -> criticidade ? "#4ADE80" : "#94A3B8";
-            case "Moderada" -> "#FBBF24";
-            case "Alta" -> "#FB923C";
-            case "Crítica", "Urgente", "Imediata" -> "#F87171";
-            default -> "#60A5FA";
+            case "Informativa" -> "#2454C6";
+            case "Baixa" -> criticidade ? "#167047" : "#64748B";
+            case "Moderada" -> "#946200";
+            case "Alta" -> "#B45309";
+            case "Crítica", "Urgente", "Imediata" -> "#BE123C";
+            default -> "#2454C6";
         };
     }
 

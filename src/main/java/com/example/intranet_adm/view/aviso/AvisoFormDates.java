@@ -36,6 +36,8 @@ public class AvisoFormDates {
 
         horaPublicacao.setText("00:00");
         horaExpiracao.setText("23:59");
+        horaPublicacao.setPrefWidth(78); horaPublicacao.setMaxWidth(90);
+        horaExpiracao.setPrefWidth(78); horaExpiracao.setMaxWidth(90);
 
         publicarImediatamente.setSelected(true);
         publicarImediatamente.selectedProperty().addListener(
@@ -64,6 +66,7 @@ public class AvisoFormDates {
         Label expiracaoLabel = new Label("Expiração");
 
         Label ajuda = new Label("Escolha quando o aviso será exibido e se deve expirar automaticamente.");
+        ajuda.setWrapText(true);
         ajuda.getStyleClass().add("card-description");
         HBox opcoes = new HBox(18, publicarImediatamente, popupTemporario);
 
@@ -75,7 +78,7 @@ public class AvisoFormDates {
         HBox.setHgrow(dataExpiracao, Priority.ALWAYS);
         VBox publicacao = new VBox(6, publicacaoLabel, publicacaoCampos);
         VBox expiracao = new VBox(6, expiracaoLabel, expiracaoCampos);
-        HBox linha = new HBox(12, publicacao, expiracao);
+        VBox linha = new VBox(12, publicacao, expiracao);
         HBox.setHgrow(publicacao, Priority.ALWAYS);
         HBox.setHgrow(expiracao, Priority.ALWAYS);
         container.getChildren().addAll(ajuda, opcoes, linha);
@@ -104,9 +107,8 @@ public class AvisoFormDates {
             return null;
         }
 
-        if (dataPublicacao.getValue() == null) {
-            return null;
-        }
+        dataPublicacao.commitValue();
+        if (dataPublicacao.getValue() == null) throw new IllegalArgumentException("Selecione a data de publicação.");
 
         LocalTime hora = parseHora(horaPublicacao.getText(), LocalTime.MIDNIGHT);
 
@@ -121,9 +123,8 @@ public class AvisoFormDates {
             return null;
         }
 
-        if (dataExpiracao.getValue() == null) {
-            return null;
-        }
+        dataExpiracao.commitValue();
+        if (dataExpiracao.getValue() == null) throw new IllegalArgumentException("Selecione a data de expiração.");
 
         LocalTime hora = parseHora(horaExpiracao.getText(), LocalTime.of(23, 59));
 
@@ -141,7 +142,7 @@ public class AvisoFormDates {
         try {
             return LocalTime.parse(valor);
         } catch (Exception ignored) {
-            return padrao;
+            throw new IllegalArgumentException("Horário inválido. Use HH:mm (por exemplo, 14:30).");
         }
     }
 
