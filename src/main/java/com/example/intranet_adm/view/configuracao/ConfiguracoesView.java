@@ -1,6 +1,7 @@
 package com.example.intranet_adm.view.configuracao;
 
 import com.example.intranet_adm.service.IntranetAvisosClient;
+import com.example.intranet_adm.view.components.AppIcon;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -85,9 +86,12 @@ public class ConfiguracoesView {
     private VBox criarCardConexao() {
 
         VBox card = criarCard();
+        card.getStyleClass().add(\u0022settings-connection-card\u0022);
 
         Label titulo = new Label("Conexão com a Intranet-IDAM");
 
+        titulo.setGraphic(AppIcon.create(AppIcon.Type.SERVER, 20));
+        titulo.setGraphicTextGap(10);
         titulo.setFont(
                 Font.font(
                         "System",
@@ -138,6 +142,7 @@ public class ConfiguracoesView {
         testarButton.setPrefHeight(40);
         testarButton.getStyleClass().add("secondary-button");
 
+        testarButton.setGraphic(AppIcon.create(AppIcon.Type.REFRESH, 16));
         testarButton.setOnAction(event ->
                 testarConexao()
         );
@@ -147,6 +152,7 @@ public class ConfiguracoesView {
         salvarButton.setPrefHeight(40);
         salvarButton.getStyleClass().add("primary-button");
 
+        salvarButton.setGraphic(AppIcon.create(AppIcon.Type.SAVE, 16));
         salvarButton.setOnAction(event ->
                 salvarConfiguracao()
         );
@@ -191,9 +197,12 @@ public class ConfiguracoesView {
     private VBox criarCardSistema() {
 
         VBox card = criarCard();
+        card.getStyleClass().add(\u0022settings-system-card\u0022);
 
         Label titulo = new Label("Informações do sistema");
 
+        titulo.setGraphic(AppIcon.create(AppIcon.Type.INFO, 19));
+        titulo.setGraphicTextGap(10);
         titulo.setFont(
                 Font.font(
                         "System",

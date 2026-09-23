@@ -2,6 +2,7 @@ package com.example.intranet_adm.view.popup;
 
 import com.example.intranet_adm.model.Popup;
 import com.example.intranet_adm.service.IntranetAvisosClient;
+import com.example.intranet_adm.view.components.AppIcon;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -142,6 +143,7 @@ public class PopupView {
                 "secondary-button"
         );
 
+        atualizarButton.setGraphic(AppIcon.create(AppIcon.Type.REFRESH, 16));
         atualizarButton.setOnAction(
                 event -> carregarPopups()
         );
@@ -313,7 +315,7 @@ public class PopupView {
             Popup popup
     ) {
 
-        VBox card = new VBox(12);
+        VBox card = new VBox(0);
 
         card.setPadding(
                 new Insets(18)
@@ -477,6 +479,8 @@ public class PopupView {
         Label indicador = new Label(possuiAnexo ? "📎  ANEXO" : "");
         indicador.getStyleClass().add(possuiAnexo ? "popup-attachment" : "popup-attachment-empty");
         indicador.setTooltip(new Tooltip(possuiAnexo ? "Este popup possui uma imagem ou arquivo anexado." : ""));
+        indicador.setText(possuiAnexo ? \u0022ANEXO\u0022 : \u0022\u0022);
+        if (possuiAnexo) indicador.setGraphic(AppIcon.create(AppIcon.Type.LINK, 15));
         return indicador;
     }
 
@@ -559,6 +563,8 @@ public class PopupView {
                         : "success-button"
         );
 
+        statusButton.setGraphic(AppIcon.create(
+                popup.isAtivo() ? AppIcon.Type.CLOSE : AppIcon.Type.INFO, 15));
         statusButton.setOnAction(
                 event ->
                         alterarStatus(
@@ -575,6 +581,7 @@ public class PopupView {
                 "danger-button"
         );
 
+        excluirButton.setGraphic(AppIcon.create(AppIcon.Type.TRASH, 15));
         excluirButton.setOnAction(
                 event ->
                         confirmarExclusao(popup)
@@ -743,6 +750,8 @@ public class PopupView {
 
         Label icone = new Label("◉");
 
+        icone.setText(\u0022\u0022);
+        icone.setGraphic(AppIcon.create(AppIcon.Type.POPUP, 34));
         icone.getStyleClass().add(
                 "empty-icon"
         );

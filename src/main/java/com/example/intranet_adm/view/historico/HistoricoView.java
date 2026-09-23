@@ -2,6 +2,7 @@ package com.example.intranet_adm.view.historico;
 
 import com.example.intranet_adm.model.Aviso;
 import com.example.intranet_adm.service.AvisoService;
+import com.example.intranet_adm.view.components.AppIcon;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -162,6 +163,7 @@ public class HistoricoView {
         atualizarButton.setPrefHeight(38);
         atualizarButton.getStyleClass().add("secondary-button");
 
+        atualizarButton.setGraphic(AppIcon.create(AppIcon.Type.REFRESH, 16));
         atualizarButton.setOnAction(
                 event -> atualizar()
         );
@@ -238,6 +240,7 @@ public class HistoricoView {
         card.setMaxWidth(
                 Double.MAX_VALUE
         );
+        card.getStyleClass().add(\u0022history-card\u0022);
 
         card.getStyleClass().add("app-card");
 
@@ -348,6 +351,8 @@ public class HistoricoView {
 
         removerButton.setPrefHeight(34);
 
+        removerButton.setGraphic(AppIcon.create(AppIcon.Type.TRASH, 15));
+        removerButton.getStyleClass().add(\u0022danger-button\u0022);
         removerButton.setOnAction(
                 event -> confirmarRemocao(aviso)
         );

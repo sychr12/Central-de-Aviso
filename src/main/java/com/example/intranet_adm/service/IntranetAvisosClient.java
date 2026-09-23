@@ -819,10 +819,30 @@ public class IntranetAvisosClient {
     public List<String[]> buscarVisitantes() throws IOException, InterruptedException {
         String body = enviarRequisicao(HttpRequest.newBuilder(URI.create(presenceEndpoint())).timeout(Duration.ofSeconds(8)).GET()).body();
         List<String[]> result = new ArrayList<>();
-        Pattern item = Pattern.compile("\\{\\s*\\\"nome\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"departamento\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"pagina\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"tempo\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"navegador\\\"\\s*:\\s*\\\"([^\\\"]*)\\\"", Pattern.DOTALL);
+        Pattern item = Pattern.compile("\\{[^{}]*\\\"nome\\\"[^{}]*}", Pattern.DOTALL);
         Matcher matcher = item.matcher(body);
-        while (matcher.find()) result.add(new String[]{matcher.group(1), matcher.group(2), matcher.group(3), matcher.group(4), matcher.group(5)});
+        while (matcher.find()) {
+            String visitante = matcher.group();
+            result.add(new String[]{
+                    campoVisitante(visitante, "nome", "Visitante"),
+                    campoVisitante(visitante, "departamento", "Não informado"),
+                    campoVisitante(visitante, "pagina", "/"),
+                    campoVisitante(visitante, "tempo", "—"),
+                    campoVisitante(visitante, "navegador", "Não informado"),
+                    campoVisitante(visitante, "ip", "Não informado"),
+                    campoVisitante(visitante, "maquina", "Não informado"),
+                    campoVisitante(visitante, "ultimaAtividade", "")
+            });
+        }
         return result;
+    }
+
+    private static String campoVisitante(String json, String campo, String padrao) {
+        String valor = extrairCampoTexto(json, campo);
+        if (valor == null || valor.isBlank() || "null".equalsIgnoreCase(valor.trim())) {
+            return padrao;
+        }
+        return valor;
     }
 
     // ============================================================
@@ -1121,14 +1141,16 @@ public class IntranetAvisosClient {
     }
 
     public List<String> listarMensagensDoDia() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl() + DAILY_MESSAGE_PATH)).GET().build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() / 100 != 2) throw new IOException("Falha ao listar mensagens (HTTP " + response.statusCode() + ")");
+        HttpRequest.Builder request = HttpRequest.newBuilder(
+                        URI.create(baseUrl() + DAILY_MESSAGE_PATH))
+                .timeout(Duration.ofSeconds(15))
+                .GET();
+        HttpResponse<String> response = enviarRequisicao(request);
         Matcher matcher = Pattern.compile("\\\"messages\\\"\\s*:\\s*\\[(.*?)\\]", Pattern.DOTALL).matcher(response.body());
         List<String> result = new ArrayList<>();
         if (!matcher.find()) return result;
         Matcher item = Pattern.compile("\\\"((?:\\\\.|[^\\\"])*)\\\"").matcher(matcher.group(1));
-        while (item.find()) result.add(item.group(1).replace("\\\\n", "\\n").replace("\\\\\"", "\\\""));
+        while (item.find()) result.add(unescapeJson(item.group(1)));
         return result;
     }
 
