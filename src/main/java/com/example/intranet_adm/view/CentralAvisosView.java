@@ -584,7 +584,8 @@ public final class CentralAvisosView {
 
         HistoricoView historicoView =
                 new HistoricoView(
-                        avisoService
+                        avisoService,
+                        client
                 );
 
         content.getChildren()

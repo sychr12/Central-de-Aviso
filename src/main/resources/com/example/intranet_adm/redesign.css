@@ -288,7 +288,130 @@
     -fx-font-weight: 700;
 }
 .popup-status-inactive { -fx-background-color: #edf1f6; -fx-text-fill: #5d6d82; -fx-padding: 4 10; -fx-background-radius: 12; }
-.history-card { -fx-padding: 13 16; -fx-spacing: 7; }
+.history-filter-bar {
+    -fx-padding: 14 16;
+    -fx-spacing: 12;
+    -fx-alignment: bottom-left;
+}
+.history-filter-field { -fx-spacing: 5; }
+.history-filter-label {
+    -fx-text-fill: #7788a0;
+    -fx-font-size: 9px;
+    -fx-font-weight: 700;
+}
+.history-filter-control {
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+}
+.history-search-field {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cbd6e5;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 0 11;
+}
+.history-status-message {
+    -fx-font-size: 11px;
+    -fx-padding: 2 4;
+}
+.history-card {
+    -fx-padding: 15 17;
+    -fx-spacing: 9;
+    -fx-border-color: #e0e7f0;
+}
+.history-item-title {
+    -fx-text-fill: #172844;
+    -fx-font-size: 15px;
+    -fx-font-weight: 800;
+}
+.history-item-message {
+    -fx-text-fill: #52647d;
+    -fx-font-size: 12px;
+    -fx-line-spacing: 3;
+}
+.history-item-info { -fx-text-fill: #687b96; -fx-font-size: 10px; }
+.history-item-id { -fx-text-fill: #91a0b4; -fx-font-size: 9px; }
+.history-type-badge {
+    -fx-background-radius: 14;
+    -fx-padding: 5 9;
+    -fx-font-size: 9px;
+    -fx-font-weight: 800;
+}
+.history-type-published {
+    -fx-background-color: #e8f1ff;
+    -fx-text-fill: #235ecb;
+}
+.history-type-reopened {
+    -fx-background-color: #e4f7ee;
+    -fx-text-fill: #087a50;
+}
+.history-confirm-dialog {
+    -fx-background-color: #ffffff;
+    -fx-padding: 20 22 18 22;
+}
+.history-confirm-dialog > .button-bar > .container {
+    -fx-padding: 16 0 0 0;
+}
+.history-confirm-content { -fx-spacing: 16; }
+.history-confirm-icon {
+    -fx-background-radius: 12;
+    -fx-min-width: 46;
+    -fx-pref-width: 46;
+    -fx-max-width: 46;
+    -fx-min-height: 46;
+    -fx-pref-height: 46;
+    -fx-max-height: 46;
+}
+.history-confirm-icon-danger { -fx-background-color: #fff0f2; }
+.history-confirm-icon-danger .app-icon-shape { -fx-fill: #dc3048; }
+.history-confirm-icon-primary { -fx-background-color: #eaf1ff; }
+.history-confirm-icon-primary .app-icon-shape { -fx-fill: #1f5eff; }
+.history-confirm-title {
+    -fx-text-fill: #17243c;
+    -fx-font-size: 17px;
+    -fx-font-weight: 800;
+}
+.history-confirm-description {
+    -fx-text-fill: #667790;
+    -fx-font-size: 11px;
+}
+.history-confirm-preview {
+    -fx-background-color: #f7f9fc;
+    -fx-background-radius: 9;
+    -fx-border-color: #e0e7f0;
+    -fx-border-radius: 9;
+    -fx-padding: 13 14;
+}
+.history-confirm-preview-title {
+    -fx-text-fill: #1d3152;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+.history-confirm-preview-message {
+    -fx-text-fill: #52647d;
+    -fx-font-size: 11px;
+    -fx-line-spacing: 3;
+}
+.history-confirm-warning {
+    -fx-text-fill: #b4233a;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+}
+.history-confirm-note {
+    -fx-text-fill: #315d9f;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+}
+.history-confirm-dialog .danger-button {
+    -fx-background-color: #dc3048;
+    -fx-border-color: #dc3048;
+    -fx-text-fill: white;
+}
+.history-confirm-dialog .danger-button .app-icon-shape { -fx-fill: white; }
+.history-confirm-dialog .danger-button:hover {
+    -fx-background-color: #c9253d;
+    -fx-border-color: #c9253d;
+}
 
 .monitor-page { -fx-background-color: transparent; -fx-spacing: 11; }
 .monitor-heading-row { -fx-min-height: 30; }
@@ -513,6 +636,67 @@
 .message-list-empty {
     -fx-text-fill: #71829b;
     -fx-padding: 28;
+}
+.message-delete-dialog {
+    -fx-background-color: #ffffff;
+    -fx-padding: 20 22 18 22;
+}
+.message-delete-dialog > .button-bar > .container {
+    -fx-padding: 16 0 0 0;
+}
+.message-delete-content { -fx-spacing: 16; }
+.message-delete-header { -fx-alignment: center-left; }
+.message-delete-icon {
+    -fx-background-color: #fff0f2;
+    -fx-background-radius: 12;
+    -fx-min-width: 46;
+    -fx-pref-width: 46;
+    -fx-max-width: 46;
+    -fx-min-height: 46;
+    -fx-pref-height: 46;
+    -fx-max-height: 46;
+}
+.message-delete-icon .app-icon-shape { -fx-fill: #dc3048; }
+.message-delete-title {
+    -fx-text-fill: #17243c;
+    -fx-font-size: 17px;
+    -fx-font-weight: 800;
+}
+.message-delete-description {
+    -fx-text-fill: #667790;
+    -fx-font-size: 11px;
+}
+.message-delete-preview {
+    -fx-background-color: #f7f9fc;
+    -fx-background-radius: 9;
+    -fx-border-color: #e0e7f0;
+    -fx-border-radius: 9;
+    -fx-padding: 13 14;
+}
+.message-delete-preview-title {
+    -fx-text-fill: #75859b;
+    -fx-font-size: 9px;
+    -fx-font-weight: 700;
+}
+.message-delete-preview-text {
+    -fx-text-fill: #20324f;
+    -fx-font-size: 12px;
+    -fx-line-spacing: 3;
+}
+.message-delete-warning {
+    -fx-text-fill: #b4233a;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+}
+.message-delete-dialog .danger-button {
+    -fx-background-color: #dc3048;
+    -fx-border-color: #dc3048;
+    -fx-text-fill: white;
+}
+.message-delete-dialog .danger-button .app-icon-shape { -fx-fill: white; }
+.message-delete-dialog .danger-button:hover {
+    -fx-background-color: #c9253d;
+    -fx-border-color: #c9253d;
 }
 .message-row { -fx-background-color: #f7f9fc; -fx-background-radius: 6; -fx-border-color: #e1e7f0; -fx-border-radius: 6; }
 .settings-connection-card, .settings-system-card { -fx-padding: 17; -fx-spacing: 11; }

@@ -7,12 +7,16 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -22,6 +26,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javafx.scene.paint.Color;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 /**
@@ -328,6 +333,89 @@ public class MensagemDoDiaView {
         thread.start();
     }
 
+    private void confirmarExclusao(String item, Button botaoOrigem) {
+        if (item == null || item.isBlank()) return;
+
+        Dialog<ButtonType> dialogo = new Dialog<>();
+        dialogo.setTitle("Excluir mensagem");
+        dialogo.initModality(Modality.APPLICATION_MODAL);
+        if (root.getScene() != null && root.getScene().getWindow() != null) {
+            dialogo.initOwner(root.getScene().getWindow());
+        }
+
+        ButtonType excluir = new ButtonType(
+                "Excluir mensagem", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelar = new ButtonType(
+                "Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        StackPane icone = new StackPane(AppIcon.create(AppIcon.Type.TRASH, 22));
+        icone.getStyleClass().add("message-delete-icon");
+
+        Label titulo = new Label("Excluir esta mensagem?");
+        titulo.getStyleClass().add("message-delete-title");
+        Label descricao = new Label(
+                "Confirme se deseja remover definitivamente a mensagem selecionada.");
+        descricao.setWrapText(true);
+        descricao.getStyleClass().add("message-delete-description");
+        VBox textos = new VBox(3, titulo, descricao);
+        HBox cabecalho = new HBox(12, icone, textos);
+        cabecalho.setAlignment(Pos.CENTER_LEFT);
+        cabecalho.getStyleClass().add("message-delete-header");
+
+        Label previaTitulo = new Label("MENSAGEM SELECIONADA");
+        previaTitulo.getStyleClass().add("message-delete-preview-title");
+        Label previa = new Label(item);
+        previa.setWrapText(true);
+        previa.setMaxWidth(Double.MAX_VALUE);
+        previa.setMaxHeight(90);
+        previa.setTooltip(new Tooltip(item));
+        previa.getStyleClass().add("message-delete-preview-text");
+        VBox cartaoPrevia = new VBox(7, previaTitulo, previa);
+        cartaoPrevia.getStyleClass().add("message-delete-preview");
+
+        Label aviso = new Label("Esta ação não poderá ser desfeita.");
+        aviso.getStyleClass().add("message-delete-warning");
+
+        VBox conteudo = new VBox(16, cabecalho, cartaoPrevia, aviso);
+        conteudo.getStyleClass().add("message-delete-content");
+
+        dialogo.getDialogPane().setContent(conteudo);
+        dialogo.getDialogPane().getButtonTypes().setAll(cancelar, excluir);
+        dialogo.getDialogPane().getStyleClass().add("message-delete-dialog");
+        dialogo.getDialogPane().setMinWidth(500);
+
+        var estiloBase = getClass().getResource(
+                "/com/example/intranet_adm/style.css");
+        var estiloRedesign = getClass().getResource(
+                "/com/example/intranet_adm/redesign.css");
+        if (estiloBase != null) {
+            dialogo.getDialogPane().getStylesheets().add(
+                    estiloBase.toExternalForm());
+        }
+        if (estiloRedesign != null) {
+            dialogo.getDialogPane().getStylesheets().add(
+                    estiloRedesign.toExternalForm());
+        }
+
+        Button botaoExcluir = (Button) dialogo.getDialogPane()
+                .lookupButton(excluir);
+        Button botaoCancelar = (Button) dialogo.getDialogPane()
+                .lookupButton(cancelar);
+        botaoExcluir.getStyleClass().add("danger-button");
+        botaoCancelar.getStyleClass().add("secondary-button");
+        botaoExcluir.setGraphic(AppIcon.create(AppIcon.Type.TRASH, 16));
+        botaoCancelar.setGraphic(AppIcon.create(AppIcon.Type.CLOSE, 16));
+        botaoExcluir.setDefaultButton(false);
+        botaoCancelar.setDefaultButton(true);
+        Platform.runLater(botaoCancelar::requestFocus);
+
+        dialogo.showAndWait().ifPresent(resultado -> {
+            if (resultado == excluir) {
+                excluirMensagem(item, botaoOrigem);
+            }
+        });
+    }
+
     private void iniciarEdicao(String item) {
         if (item == null || item.isBlank()) return;
         mensagemEmEdicao = item;
@@ -394,7 +482,7 @@ public class MensagemDoDiaView {
             excluir.setGraphic(AppIcon.create(AppIcon.Type.TRASH, 15));
             excluir.setOnAction(event -> {
                 String item = getItem();
-                if (item != null) excluirMensagem(item, excluir);
+                if (item != null) confirmarExclusao(item, excluir);
             });
 
             acoes.setAlignment(Pos.CENTER_RIGHT);
