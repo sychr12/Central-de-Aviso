@@ -201,17 +201,20 @@ public class HistoricoView {
                 "Todos os tipos", "Publicações", "Reaberturas");
         tipoFiltro.setValue("Todos os tipos");
         tipoFiltro.setPrefWidth(155);
+        tipoFiltro.setVisibleRowCount(5);
         tipoFiltro.setOnAction(event -> aplicarFiltros());
 
         periodoFiltro.getItems().addAll(
                 "Todo o período", "Hoje", "Últimos 7 dias", "Últimos 30 dias");
         periodoFiltro.setValue("Todo o período");
         periodoFiltro.setPrefWidth(160);
+        periodoFiltro.setVisibleRowCount(5);
         periodoFiltro.setOnAction(event -> aplicarFiltros());
 
         ordemFiltro.getItems().addAll("Mais recentes", "Mais antigos");
         ordemFiltro.setValue("Mais recentes");
         ordemFiltro.setPrefWidth(140);
+        ordemFiltro.setVisibleRowCount(5);
         ordemFiltro.setOnAction(event -> aplicarFiltros());
 
         VBox busca = criarCampoFiltro("BUSCAR", buscaField);
