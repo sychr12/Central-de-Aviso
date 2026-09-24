@@ -8,14 +8,11 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-
-import java.util.Locale;
 
 public class AvisoFormView {
 
@@ -56,26 +53,52 @@ public class AvisoFormView {
 
     private VBox criarView() {
 
-        VBox container = new VBox(18);
-        container.setMaxWidth(1160);
+        VBox container = new VBox(22);
+        container.setMaxWidth(1240);
         container.getStyleClass().add(\u0022new-notice-layout\u0022);
 
-        HBox heading = new HBox(12);
-        heading.setAlignment(Pos.CENTER_LEFT);
-        Label headingIcon = new Label("✦");
-        headingIcon.getStyleClass().add("form-heading-icon");
-        headingIcon.setText(\u0022\u0022);
-        headingIcon.setGraphic(AppIcon.create(AppIcon.Type.MESSAGE, 20));
-        VBox headingText = new VBox(3,
-                criarLabel("Sua próxima comunicação", "form-heading"),
-                criarLabel("Preencha o conteúdo, programe a publicação e revise antes de enviar.", "page-description"));
+        StackPane headingIcon = new StackPane(
+                AppIcon.create(AppIcon.Type.MESSAGE, 27));
+        headingIcon.getStyleClass().add("composer-hero-icon");
+
+        Label eyebrow = criarLabel(
+                "COMPOSITOR DE COMUNICAÇÕES", "composer-eyebrow");
+        Label heroTitle = criarLabel(
+                "Transforme informação em uma mensagem que chama atenção.",
+                "composer-title");
+        Label heroDescription = criarLabel(
+                "Construa o aviso, defina o momento certo e revise tudo antes de publicar.",
+                "composer-description");
+        VBox headingText = new VBox(5, eyebrow, heroTitle, heroDescription);
+        headingText.setMinWidth(0);
+        HBox.setHgrow(headingText, Priority.ALWAYS);
+
         Region headingSpacer = new Region();
         HBox.setHgrow(headingSpacer, Priority.ALWAYS);
-        Button previewButton = new Button("◉  Visualizar Popup");
-        previewButton.getStyleClass().add("secondary-button");
-        previewButton.setText(\u0022Visualizar popup\u0022);
+
+        Button previewButton = new Button("Abrir prévia");
+        previewButton.getStyleClass().add("composer-preview-button");
         previewButton.setGraphic(AppIcon.create(AppIcon.Type.EYE, 17));
-        heading.getChildren().addAll(headingText, headingSpacer);
+        VBox heroAction = new VBox(8,
+                criarLabel("RASCUNHO LOCAL", "composer-draft-badge"),
+                previewButton);
+        heroAction.setAlignment(Pos.CENTER_RIGHT);
+
+        HBox heroTop = new HBox(
+                16, headingIcon, headingText, headingSpacer, heroAction);
+        heroTop.setAlignment(Pos.CENTER_LEFT);
+
+        HBox journey = new HBox(9,
+                criarEtapa("01", "Conteúdo", "Mensagem e tom"),
+                criarEtapa("02", "Programação", "Data e duração"),
+                criarEtapa("03", "Revisão", "Prévia e envio"));
+        journey.getStyleClass().add("composer-journey");
+        for (Node etapa : journey.getChildren()) {
+            HBox.setHgrow(etapa, Priority.ALWAYS);
+        }
+
+        VBox hero = new VBox(18, heroTop, journey);
+        hero.getStyleClass().add("composer-hero");
         previewButton.setOnAction(event -> {
             javafx.scene.control.Dialog<Void> dialog = new javafx.scene.control.Dialog<>();
             dialog.setTitle("Prévia do aviso");
@@ -88,108 +111,49 @@ public class AvisoFormView {
             dialog.showAndWait();
         });
 
-        VBox detalhes = criarCard("Detalhes do aviso", fields.criarLayout(), dates.criarLayout());
+        VBox detalhes = criarSecao(
+                "01",
+                AppIcon.Type.EDIT,
+                "Conteúdo e classificação",
+                "Escreva a mensagem e escolha a intensidade com que ela deve aparecer.",
+                fields.criarLayout());
 
-        VBox imagem = criarCard("Imagem (opcional)", image.criarLayout());
+        VBox programacao = criarSecao(
+                "02",
+                AppIcon.Type.HISTORY,
+                "Programação inteligente",
+                "Publique agora ou defina uma janela exata de exibição.",
+                dates.criarLayout());
 
-        previewBanner = criarLabel("⚠  INFORMATIVA · NORMAL", "preview-banner");
+        VBox imagem = criarSecao(
+                "03",
+                AppIcon.Type.IMAGE,
+                "Mídia e anexo",
+                "Reforce a comunicação com uma imagem ou disponibilize um documento em PDF.",
+                image.criarLayout());
+
+        previewBanner = criarLabel("INFORMATIVA · NORMAL", "preview-banner");
         previewTitle = criarLabel("Título do aviso", "preview-title");
-        previewCopy = criarLabel("A mensagem aparecerá aqui conforme você preencher o formulário.", "preview-copy");
-        VBox preview = criarCard("PREVIEW DO POPUP",
-                previewBanner,
-                previewTitle,
-                previewCopy,
-                criarLabel("Expira conforme a data configurada", "preview-meta"));
-        fields.getTituloField().textProperty().addListener((o,a,b) -> previewTitle.setText(b == null || b.isBlank() ? "Título do aviso" : b));
-        fields.getMensagemArea().textProperty().addListener((o,a,b) -> previewCopy.setText(b == null || b.isBlank() ? "A mensagem aparecerá aqui conforme você preencher o formulário." : b));
-        preview.getStyleClass().add(\u0022notice-preview-panel\u0022);
-        preview.getChildren().clear();
-        Label previewHeading = criarLabel(\u0022Pré-visualização do aviso\u0022,
-                \u0022notice-preview-heading\u0022);
-        Label popupBrand = criarLabel(\u0022Central de Avisos\u0022,
-                \u0022notice-popup-brand\u0022);
-        popupBrand.setGraphic(AppIcon.create(AppIcon.Type.BELL, 17));
-        popupBrand.setGraphicTextGap(8);
-        Label popupClose = new Label();
-        popupClose.setGraphic(AppIcon.create(AppIcon.Type.CLOSE, 15));
-        popupClose.getStyleClass().add(\u0022notice-popup-close\u0022);
-        Region popupSpacer = new Region();
-        HBox.setHgrow(popupSpacer, Priority.ALWAYS);
-        HBox popupTopbar = new HBox(8, popupBrand, popupSpacer, popupClose);
-        popupTopbar.setAlignment(Pos.CENTER_LEFT);
-        popupTopbar.getStyleClass().add(\u0022notice-popup-topbar\u0022);
-
-        StackPane popupIcon = new StackPane(AppIcon.create(AppIcon.Type.INFO, 25));
-        popupIcon.getStyleClass().add(\u0022notice-popup-icon\u0022);
-        previewBanner.setWrapText(false);
-        previewBanner.setMinWidth(Region.USE_PREF_SIZE);
-        HBox popupStatus = new HBox(10, popupIcon, previewBanner);
-        popupStatus.setAlignment(Pos.CENTER_LEFT);
-        ImageView popupImage = new ImageView();
-        popupImage.imageProperty().bind(image.getPreview().imageProperty());
-        popupImage.fitWidthProperty().bind(preview.widthProperty().subtract(72));
-        popupImage.setFitHeight(155);
-        popupImage.setPreserveRatio(true);
-        popupImage.setSmooth(true);
-        StackPane popupImageFrame = new StackPane(popupImage);
-        popupImageFrame.getStyleClass().add(\u0022notice-popup-image-frame\u0022);
-        popupImageFrame.visibleProperty().bind(popupImage.imageProperty().isNotNull());
-        popupImageFrame.managedProperty().bind(popupImageFrame.visibleProperty());
-
-        Label popupAttachment = criarLabel(\u0022\u0022, \u0022notice-popup-attachment\u0022);
-        popupAttachment.setGraphic(AppIcon.create(AppIcon.Type.IMAGE, 16));
-        popupAttachment.setWrapText(true);
-        popupAttachment.setMinWidth(0);
-        popupAttachment.setVisible(false);
-        popupAttachment.managedProperty().bind(popupAttachment.visibleProperty());
-        image.imagemSelecionadaProperty().addListener((observavel, anterior, arquivo) -> {
-            boolean pdf = arquivo != null && arquivo.getFileName().toString()
-                    .toLowerCase(Locale.ROOT).endsWith(\u0022.pdf\u0022);
-            popupAttachment.setText(pdf
-                    ? \u0022PDF anexado: \u0022 + arquivo.getFileName() : \u0022\u0022);
-            popupAttachment.setVisible(pdf);
-        });
-
-        Label popupLink = criarLabel(\u0022\u0022, \u0022notice-popup-link\u0022);
-        popupLink.setGraphic(AppIcon.create(AppIcon.Type.LINK, 16));
-        popupLink.setWrapText(true);
-        popupLink.setMinWidth(0);
-        popupLink.setMaxWidth(Double.MAX_VALUE);
-        popupLink.setVisible(false);
-        popupLink.managedProperty().bind(popupLink.visibleProperty());
-        fields.getLinkField().textProperty().addListener((observavel, anterior, valor) -> {
-            String link = valor == null ? \u0022\u0022 : valor.trim();
-            popupLink.setText(link.isEmpty() ? \u0022\u0022 : \u0022Saiba mais: \u0022 + link);
-            popupLink.setVisible(!link.isEmpty());
-        });
-        Label popupMeta = criarLabel(\u0022Expira conforme a data configurada\u0022,
-                \u0022preview-meta\u0022);
-        Label popupAcknowledge = criarLabel(\u0022Entendi\u0022,
-                \u0022notice-popup-acknowledge\u0022);
-        popupAcknowledge.setMaxWidth(Double.MAX_VALUE);
-        popupAcknowledge.setAlignment(Pos.CENTER);
-        VBox popupBody = new VBox(12, popupStatus, previewTitle, previewCopy,
-                popupImageFrame, popupAttachment, popupLink, popupMeta, popupAcknowledge);
-        popupBody.getStyleClass().add(\u0022notice-popup-body\u0022);
-        VBox popupWindow = new VBox(popupTopbar, popupBody);
-        popupWindow.getStyleClass().add(\u0022notice-popup-window\u0022);
-        preview.getChildren().addAll(previewHeading, popupWindow);
+        previewCopy = criarLabel(
+                "A mensagem aparecerá aqui conforme você preencher o formulário.",
+                "preview-copy");
+        fields.getTituloField().textProperty().addListener((o, a, b) ->
+                previewTitle.setText(b == null || b.isBlank()
+                        ? "Título do aviso" : b));
+        fields.getMensagemArea().textProperty().addListener((o, a, b) ->
+                previewCopy.setText(b == null || b.isBlank()
+                        ? "A mensagem aparecerá aqui conforme você preencher o formulário."
+                        : b));
         fields.getCriticidadeComboBox().valueProperty().addListener((o,a,b) -> atualizarBanner());
         fields.getPrioridadeComboBox().valueProperty().addListener((o,a,b) -> atualizarBanner());
         atualizarBanner();
-        VBox editor = new VBox(18, detalhes, imagem);
+
+        VBox editor = new VBox(16, detalhes, programacao, imagem);
         detalhes.getStyleClass().add(\u0022notice-editor-card\u0022);
+        programacao.getStyleClass().add(\u0022notice-editor-card\u0022);
         imagem.getStyleClass().add(\u0022notice-editor-card\u0022);
         editor.setMinWidth(0);
-        editor.setPrefWidth(600);
-        preview.setMinWidth(250);
-        preview.setPrefWidth(300);
-        preview.setMaxWidth(340);
-        preview.setMaxHeight(Region.USE_PREF_SIZE);
-        HBox columns = new HBox(22, editor, preview);
-        columns.getStyleClass().add(\u0022notice-workspace\u0022);
-        HBox.setHgrow(columns.getChildren().get(0), Priority.ALWAYS);
-        HBox.setHgrow(preview, Priority.ALWAYS);
+        editor.setMaxWidth(Double.MAX_VALUE);
 
         Button limparButton = new Button("Limpar");
         limparButton.getStyleClass().add("secondary-button");
@@ -216,7 +180,22 @@ public class AvisoFormView {
         botoes.setAlignment(Pos.CENTER_RIGHT);
         botoes.getStyleClass().add(\u0022notice-actions\u0022);
 
-        container.getChildren().addAll(heading, columns, botoes);
+        StackPane actionIcon = new StackPane(
+                AppIcon.create(AppIcon.Type.SEND, 22));
+        actionIcon.getStyleClass().add("notice-action-icon");
+        VBox actionText = new VBox(3,
+                 criarLabel("Tudo pronto para comunicar?", "notice-action-title"),
+                 criarLabel(
+                         "Use o botão Abrir prévia acima e publique quando estiver seguro.",
+                         "notice-action-description"));
+        Region actionSpacer = new Region();
+        HBox.setHgrow(actionSpacer, Priority.ALWAYS);
+        HBox actionBar = new HBox(
+                13, actionIcon, actionText, actionSpacer, botoes);
+        actionBar.setAlignment(Pos.CENTER_LEFT);
+        actionBar.getStyleClass().add("notice-action-bar");
+
+        container.getChildren().addAll(hero, editor, actionBar);
 
         return container;
     }
@@ -251,6 +230,52 @@ public class AvisoFormView {
 
     public static Node criar() {
         return new AvisoFormView().getView();
+    }
+
+    private HBox criarEtapa(
+            String numero,
+            String titulo,
+            String descricao) {
+
+        Label numeroLabel = criarLabel(numero, "composer-step-number");
+        VBox texto = new VBox(1,
+                criarLabel(titulo, "composer-step-title"),
+                criarLabel(descricao, "composer-step-description"));
+        HBox etapa = new HBox(10, numeroLabel, texto);
+        etapa.setAlignment(Pos.CENTER_LEFT);
+        etapa.setMaxWidth(Double.MAX_VALUE);
+        etapa.getStyleClass().add("composer-step");
+        return etapa;
+    }
+
+    private VBox criarSecao(
+            String numero,
+            AppIcon.Type icone,
+            String titulo,
+            String descricao,
+            Node... conteudo) {
+
+        StackPane iconeContainer = new StackPane(AppIcon.create(icone, 20));
+        iconeContainer.getStyleClass().add("notice-section-icon");
+
+        VBox titulos = new VBox(3,
+                criarLabel(titulo, "notice-section-title"),
+                criarLabel(descricao, "notice-section-description"));
+        titulos.setMinWidth(0);
+        HBox.setHgrow(titulos, Priority.ALWAYS);
+
+        Label numeroLabel = criarLabel(numero, "notice-section-number");
+        HBox cabecalho = new HBox(
+                12, iconeContainer, titulos, numeroLabel);
+        cabecalho.setAlignment(Pos.CENTER_LEFT);
+        cabecalho.getStyleClass().add("notice-section-header");
+
+        VBox secao = new VBox(17, cabecalho);
+        secao.setPadding(new Insets(20));
+        secao.setMaxWidth(Double.MAX_VALUE);
+        secao.getStyleClass().addAll("app-card", "notice-section");
+        secao.getChildren().addAll(conteudo);
+        return secao;
     }
 
     private VBox criarCard(String titulo, Node... conteudo) {

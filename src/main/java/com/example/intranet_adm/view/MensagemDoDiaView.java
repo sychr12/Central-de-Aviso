@@ -58,6 +58,10 @@ public class MensagemDoDiaView {
     private final ListView<String> listaMensagens = new ListView<>();
     private final ComboBox<String> quantidadeComboBox = new ComboBox<>();
     private final Label resumoLista = new Label();
+    private final Label totalMensagensLabel = new Label("—");
+    private final Label previaMensagemLabel = new Label(
+            "Sua mensagem aparecerá aqui enquanto você escreve.");
+    private final Label previaEstadoLabel = new Label("PRONTA PARA EXIBIÇÃO");
     private final AtomicBoolean carregandoLista = new AtomicBoolean();
     private final List<String> mensagensCarregadas = new ArrayList<>();
     private String mensagemEmEdicao;
@@ -84,9 +88,32 @@ public class MensagemDoDiaView {
     // ============================================================
 
     private void construir() {
-        root.setSpacing(16);
+        root.setSpacing(18);
         root.setPadding(new Insets(0));
         root.setFillWidth(true);
+        root.getStyleClass().add("message-page");
+
+        Label heroEyebrow = new Label("BIBLIOTECA EDITORIAL");
+        heroEyebrow.getStyleClass().add("message-hero-eyebrow");
+        Label heroTitulo = new Label("Palavras que movimentam o dia.");
+        heroTitulo.getStyleClass().add("message-hero-title");
+        Label heroDescricao = new Label(
+                "Crie mensagens curtas, organize o acervo e mantenha a comunicação interna sempre inspiradora.");
+        heroDescricao.setWrapText(true);
+        heroDescricao.getStyleClass().add("message-hero-description");
+        VBox heroTextos = new VBox(5, heroEyebrow, heroTitulo, heroDescricao);
+        heroTextos.setMaxWidth(650);
+        HBox.setHgrow(heroTextos, Priority.ALWAYS);
+
+        StackPane heroIcone = new StackPane(AppIcon.create(AppIcon.Type.MESSAGE, 25));
+        heroIcone.getStyleClass().add("message-hero-icon");
+        totalMensagensLabel.getStyleClass().add("message-hero-metric-value");
+        VBox metrica = criarMetrica(totalMensagensLabel, "NO ACERVO");
+        Region espacoHero = new Region();
+        HBox.setHgrow(espacoHero, Priority.ALWAYS);
+        HBox hero = new HBox(18, heroIcone, heroTextos, espacoHero, metrica);
+        hero.setAlignment(Pos.CENTER_LEFT);
+        hero.getStyleClass().add("message-hero");
 
         editorTitulo.getStyleClass().add("message-editor-title");
         editorDescricao.setWrapText(true);
@@ -117,15 +144,25 @@ public class MensagemDoDiaView {
 
         mensagemArea.setPromptText("Digite a mensagem do dia");
         mensagemArea.setWrapText(true);
-        mensagemArea.setPrefRowCount(4);
+        mensagemArea.setPrefRowCount(5);
+        mensagemArea.setMinHeight(132);
         mensagemArea.getStyleClass().add("form-field");
         mensagemArea.textProperty().addListener((observavel, anterior, atual) -> {
             int quantidade = atual == null ? 0 : atual.length();
             contadorCaracteres.setText(
                     quantidade == 1 ? "1 caractere" : quantidade + " caracteres");
+            String conteudo = atual == null ? "" : atual.trim();
+            previaMensagemLabel.setText(conteudo.isEmpty()
+                    ? "Sua mensagem aparecerá aqui enquanto você escreve."
+                    : conteudo);
         });
 
         ativoCheckBox.setSelected(true);
+        ativoCheckBox.getStyleClass().add("message-visibility-toggle");
+        ativoCheckBox.selectedProperty().addListener((observavel, anterior, selecionado) ->
+                previaEstadoLabel.setText(selecionado
+                        ? "PRONTA PARA EXIBIÇÃO"
+                        : "MENSAGEM OCULTA"));
 
         salvarButton.setPrefHeight(40);
         salvarButton.getStyleClass().add("primary-button");
@@ -160,10 +197,42 @@ public class MensagemDoDiaView {
         bibliotecaDescricao.getStyleClass().add("message-library-description");
         VBox bibliotecaTitulos = new VBox(2, bibliotecaTitulo, bibliotecaDescricao);
         bibliotecaTitulos.getStyleClass().add("message-list-title-block");
+        StackPane bibliotecaIcone = new StackPane(
+                AppIcon.create(AppIcon.Type.MESSAGE, 17));
+        bibliotecaIcone.getStyleClass().add("message-library-icon");
+        HBox bibliotecaIdentidade = new HBox(11, bibliotecaIcone, bibliotecaTitulos);
+        bibliotecaIdentidade.setAlignment(Pos.CENTER_LEFT);
 
         VBox editor = new VBox(
                 15, editorCabecalho, campoMensagem, botoes, statusLabel);
         editor.getStyleClass().addAll(\u0022app-card\u0022, \u0022message-editor-panel\u0022);
+        editor.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(editor, Priority.ALWAYS);
+
+        Label previaEyebrow = new Label("PRÉVIA AO VIVO");
+        previaEyebrow.getStyleClass().add("message-preview-eyebrow");
+        Label aspas = new Label("“");
+        aspas.getStyleClass().add("message-preview-quote");
+        previaMensagemLabel.setWrapText(true);
+        previaMensagemLabel.setMaxWidth(Double.MAX_VALUE);
+        previaMensagemLabel.getStyleClass().add("message-preview-text");
+        Region espacoPrevia = new Region();
+        VBox.setVgrow(espacoPrevia, Priority.ALWAYS);
+        StackPane estadoPonto = new StackPane();
+        estadoPonto.getStyleClass().add("message-preview-status-dot");
+        previaEstadoLabel.getStyleClass().add("message-preview-status-text");
+        HBox estadoPrevia = new HBox(7, estadoPonto, previaEstadoLabel);
+        estadoPrevia.setAlignment(Pos.CENTER_LEFT);
+        VBox previa = new VBox(
+                7, previaEyebrow, aspas, previaMensagemLabel, espacoPrevia, estadoPrevia);
+        previa.setMinWidth(235);
+        previa.setPrefWidth(285);
+        previa.setMaxWidth(320);
+        previa.getStyleClass().add("message-live-preview");
+
+        HBox areaCriacao = new HBox(18, editor, previa);
+        areaCriacao.setAlignment(Pos.TOP_LEFT);
+        areaCriacao.getStyleClass().add("message-compose-workspace");
 
         quantidadeComboBox.getItems().addAll(
                 \u002210\u0022, \u002250\u0022, \u0022100\u0022, \u0022Todas\u0022);
@@ -178,17 +247,25 @@ public class MensagemDoDiaView {
         Region espaco = new Region();
         HBox.setHgrow(espaco, Priority.ALWAYS);
         HBox bibliotecaCabecalho = new HBox(
-                12, bibliotecaTitulos, resumoLista, espaco, exibirLabel, quantidadeComboBox);
+                12, bibliotecaIdentidade, resumoLista, espaco, exibirLabel, quantidadeComboBox);
         bibliotecaCabecalho.setAlignment(Pos.CENTER_LEFT);
         bibliotecaCabecalho.getStyleClass().add(\u0022message-list-header\u0022);
 
         configurarListaMensagens();
         VBox biblioteca = new VBox(10, bibliotecaCabecalho, listaMensagens);
         biblioteca.getStyleClass().addAll(\u0022app-card\u0022, \u0022message-library-panel\u0022);
-        editor.setMaxWidth(Double.MAX_VALUE);
         biblioteca.setMaxWidth(Double.MAX_VALUE);
-        root.getChildren().addAll(editor, biblioteca);
+        root.getChildren().addAll(hero, areaCriacao, biblioteca);
         carregarLista();
+    }
+
+    private VBox criarMetrica(Label valor, String legenda) {
+        Label rotulo = new Label(legenda);
+        rotulo.getStyleClass().add("message-hero-metric-label");
+        VBox caixa = new VBox(1, valor, rotulo);
+        caixa.setAlignment(Pos.CENTER);
+        caixa.getStyleClass().add("message-hero-metric");
+        return caixa;
     }
 
     // ============================================================
@@ -201,8 +278,16 @@ public class MensagemDoDiaView {
         listaMensagens.setMaxHeight(620);
         listaMensagens.setFocusTraversable(false);
         listaMensagens.getStyleClass().add("message-saved-list");
-        Label vazio = new Label("Nenhuma mensagem salva.");
-        vazio.getStyleClass().add("message-list-empty");
+        StackPane vazioIcone = new StackPane(AppIcon.create(AppIcon.Type.MESSAGE, 20));
+        vazioIcone.getStyleClass().add("message-empty-icon");
+        Label vazioTitulo = new Label("Seu acervo começa aqui");
+        vazioTitulo.getStyleClass().add("message-empty-title");
+        Label vazioDescricao = new Label(
+                "Escreva a primeira mensagem acima e ela aparecerá nesta biblioteca.");
+        vazioDescricao.getStyleClass().add("message-list-empty");
+        VBox vazio = new VBox(7, vazioIcone, vazioTitulo, vazioDescricao);
+        vazio.setAlignment(Pos.CENTER);
+        vazio.getStyleClass().add("message-empty-state");
         listaMensagens.setPlaceholder(vazio);
         listaMensagens.setCellFactory(view -> new MensagemCell());
     }
@@ -302,6 +387,7 @@ public class MensagemDoDiaView {
         listaMensagens.getItems().setAll(
                 mensagensCarregadas.subList(0, quantidade));
         resumoLista.setText("Exibindo " + quantidade + " de " + total);
+        totalMensagensLabel.setText(String.valueOf(total));
     }
 
     private int obterLimiteSelecionado() {
@@ -453,13 +539,14 @@ public class MensagemDoDiaView {
     }
 
     private final class MensagemCell extends ListCell<String> {
+        private final Label ordem = new Label();
+        private final Label categoria = new Label("MENSAGEM DO DIA");
         private final Label texto = new Label();
         private final Button editar = new Button("Editar");
         private final Button excluir = new Button("Excluir");
-        private final StackPane icone = new StackPane(
-                AppIcon.create(AppIcon.Type.MESSAGE, 16));
+        private final VBox conteudo = new VBox(5, categoria, texto);
         private final HBox acoes = new HBox(8, editar, excluir);
-        private final HBox linha = new HBox(12, icone, texto, acoes);
+        private final HBox linha = new HBox(14, ordem, conteudo, acoes);
 
         private MensagemCell() {
             setText(null);
@@ -470,9 +557,13 @@ public class MensagemDoDiaView {
             texto.setMinWidth(0);
             texto.setMaxWidth(Double.MAX_VALUE);
             texto.getStyleClass().add("message-saved-text");
-            HBox.setHgrow(texto, Priority.ALWAYS);
+            conteudo.setMinWidth(0);
+            conteudo.setMaxWidth(Double.MAX_VALUE);
+            conteudo.getStyleClass().add("message-saved-content");
+            HBox.setHgrow(conteudo, Priority.ALWAYS);
 
-            icone.getStyleClass().add("message-saved-icon");
+            ordem.getStyleClass().add("message-saved-index");
+            categoria.getStyleClass().add("message-saved-category");
 
             editar.getStyleClass().add("secondary-button");
             editar.setGraphic(AppIcon.create(AppIcon.Type.EDIT, 15));
@@ -488,7 +579,7 @@ public class MensagemDoDiaView {
             acoes.setAlignment(Pos.CENTER_RIGHT);
             acoes.getStyleClass().add("message-saved-actions");
             linha.setAlignment(Pos.CENTER_LEFT);
-            linha.setPadding(new Insets(13, 14, 13, 12));
+            linha.setPadding(new Insets(15, 15, 15, 13));
             linha.getStyleClass().add("message-saved-row");
             linha.prefWidthProperty().bind(
                     listaMensagens.widthProperty().subtract(28));
@@ -499,10 +590,12 @@ public class MensagemDoDiaView {
             super.updateItem(item, empty);
             linha.getStyleClass().remove("message-saved-row-editing");
             if (empty || item == null) {
+                ordem.setText(null);
                 texto.setText(null);
                 setGraphic(null);
                 return;
             }
+            ordem.setText(String.format("%02d", getIndex() + 1));
             texto.setText(item);
             excluir.setDisable(false);
             boolean editando = item.equals(mensagemEmEdicao);

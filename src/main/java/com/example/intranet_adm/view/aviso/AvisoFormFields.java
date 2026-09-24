@@ -56,12 +56,18 @@ public class AvisoFormFields {
 
     public VBox criarLayout() {
         VBox container = new VBox(12);
+        container.getStyleClass().add("notice-fields-layout");
 
         Label tituloLabel = new Label("Título");
         Label criticidadeLabel = new Label("Criticidade");
         Label prioridadeLabel = new Label("Prioridade");
         Label mensagemLabel = new Label("Mensagem");
         Label linkLabel = new Label("Link");
+        tituloLabel.getStyleClass().add("notice-field-label");
+        criticidadeLabel.getStyleClass().add("notice-field-label");
+        prioridadeLabel.getStyleClass().add("notice-field-label");
+        mensagemLabel.getStyleClass().add("notice-field-label");
+        linkLabel.getStyleClass().add("notice-field-label");
 
         tituloField.setMaxWidth(Double.MAX_VALUE);
         mensagemArea.setMaxWidth(Double.MAX_VALUE);
@@ -73,12 +79,18 @@ public class AvisoFormFields {
         VBox criticidade = new VBox(6, criticidadeLabel, criticidadeComboBox);
         VBox prioridade = new VBox(6, prioridadeLabel, prioridadeComboBox);
         HBox niveis = new HBox(12, criticidade, prioridade);
+        titulo.getStyleClass().add("notice-field-group");
+        criticidade.getStyleClass().add("notice-field-group");
+        prioridade.getStyleClass().add("notice-field-group");
+        niveis.getStyleClass().add("notice-level-row");
         HBox.setHgrow(titulo, Priority.ALWAYS);
         HBox.setHgrow(criticidade, Priority.ALWAYS);
         HBox.setHgrow(prioridade, Priority.ALWAYS);
 
         VBox mensagem = new VBox(6, mensagemLabel, mensagemArea);
         VBox link = new VBox(6, linkLabel, linkField);
+        mensagem.getStyleClass().add("notice-field-group");
+        link.getStyleClass().add("notice-field-group");
         container.getChildren().addAll(titulo, niveis, mensagem, link);
 
         return container;

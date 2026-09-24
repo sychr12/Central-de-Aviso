@@ -55,6 +55,7 @@ public class AvisoFormImage {
 
     public VBox criarLayout() {
         VBox container = new VBox(10);
+        container.getStyleClass().add("notice-media-layout");
 
         Label placeholder = new Label("Nenhuma imagem selecionada");
         placeholder.getStyleClass().add("image-placeholder");
@@ -89,6 +90,7 @@ public class AvisoFormImage {
         HBox layout = new HBox(16, areaPreview, detalhes);
         layout.setAlignment(Pos.CENTER_LEFT);
         layout.setMinWidth(0);
+        layout.getStyleClass().add("notice-media-row");
         HBox.setHgrow(detalhes, Priority.ALWAYS);
         container.getChildren().add(layout);
 

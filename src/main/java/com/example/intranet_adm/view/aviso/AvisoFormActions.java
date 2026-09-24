@@ -85,12 +85,23 @@ public class AvisoFormActions {
                             .comAtivo(true)
                             .comPodeFechar(true);
 
+            String criticidadeHistorico = fields.getCriticidade();
+            String prioridadeHistorico = fields.getPrioridade();
+
             enviando.set(true);
             javafx.concurrent.Task<String> task = new javafx.concurrent.Task<>() {
                 @Override protected String call() throws Exception {
                     client.enviar(config);
                     try {
-                        if (avisoService != null) avisoService.adicionar(config.getTitulo(), config.getMensagem(), "Central de Avisos");
+                        if (avisoService != null) {
+                            avisoService.adicionar(
+                                    config.getTitulo(),
+                                    config.getMensagem(),
+                                    "Central de Avisos",
+                                    criticidadeHistorico,
+                                    prioridadeHistorico
+                            );
+                        }
                         return null;
                     } catch (Exception error) {
                         return "O aviso foi publicado, mas o histórico local não pôde ser salvo. Não envie novamente.";

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 
 public class HistoricoView {
@@ -37,6 +38,7 @@ public class HistoricoView {
     private final TextField buscaField = new TextField();
     private final ComboBox<String> tipoFiltro = new ComboBox<>();
     private final ComboBox<String> periodoFiltro = new ComboBox<>();
+    private final ComboBox<String> anoFiltro = new ComboBox<>();
     private final ComboBox<String> ordemFiltro = new ComboBox<>();
     private final List<Aviso> avisosCarregados = new ArrayList<>();
 
@@ -198,9 +200,9 @@ public class HistoricoView {
                 (observavel, anterior, atual) -> aplicarFiltros());
 
         tipoFiltro.getItems().addAll(
-                "Todos os tipos", "Publicações", "Reaberturas");
+                "Todos os tipos", "Normal", "Atenção", "Urgente", "Crítico");
         tipoFiltro.setValue("Todos os tipos");
-        tipoFiltro.setPrefWidth(155);
+        tipoFiltro.setPrefWidth(165);
         tipoFiltro.setVisibleRowCount(5);
         tipoFiltro.setOnAction(event -> aplicarFiltros());
 
@@ -210,6 +212,12 @@ public class HistoricoView {
         periodoFiltro.setPrefWidth(160);
         periodoFiltro.setVisibleRowCount(5);
         periodoFiltro.setOnAction(event -> aplicarFiltros());
+
+        anoFiltro.getItems().add("Todos os anos");
+        anoFiltro.setValue("Todos os anos");
+        anoFiltro.setPrefWidth(125);
+        anoFiltro.setVisibleRowCount(6);
+        anoFiltro.setOnAction(event -> aplicarFiltros());
 
         ordemFiltro.getItems().addAll("Mais recentes", "Mais antigos");
         ordemFiltro.setValue("Mais recentes");
@@ -221,6 +229,7 @@ public class HistoricoView {
         HBox.setHgrow(busca, Priority.ALWAYS);
         VBox tipo = criarCampoFiltro("TIPO", tipoFiltro);
         VBox periodo = criarCampoFiltro("PERÍODO", periodoFiltro);
+        VBox ano = criarCampoFiltro("ANO", anoFiltro);
         VBox ordem = criarCampoFiltro("ORDENAR", ordemFiltro);
 
         Button limpar = new Button("Limpar");
@@ -229,7 +238,7 @@ public class HistoricoView {
         limpar.setOnAction(event -> limparFiltros());
 
         VBox acao = criarCampoFiltro("FILTROS", limpar);
-        HBox filtros = new HBox(12, busca, tipo, periodo, ordem, acao);
+        HBox filtros = new HBox(12, busca, tipo, periodo, ano, ordem, acao);
         filtros.setAlignment(Pos.BOTTOM_LEFT);
         filtros.getStyleClass().addAll("app-card", "history-filter-bar");
         return filtros;
@@ -248,6 +257,7 @@ public class HistoricoView {
         buscaField.clear();
         tipoFiltro.setValue("Todos os tipos");
         periodoFiltro.setValue("Todo o período");
+        anoFiltro.setValue("Todos os anos");
         ordemFiltro.setValue("Mais recentes");
         aplicarFiltros();
     }
@@ -261,6 +271,7 @@ public class HistoricoView {
         try {
             avisosCarregados.clear();
             avisosCarregados.addAll(avisoService.listarTodos());
+            atualizarAnosDisponiveis();
             statusLabel.setText("");
             aplicarFiltros();
 
@@ -282,6 +293,7 @@ public class HistoricoView {
             if (!correspondeBusca(aviso, busca)) continue;
             if (!correspondeTipo(aviso)) continue;
             if (!correspondePeriodo(aviso)) continue;
+            if (!correspondeAno(aviso)) continue;
             filtrados.add(aviso);
         }
 
@@ -322,9 +334,7 @@ public class HistoricoView {
     private boolean correspondeTipo(Aviso aviso) {
         String filtro = tipoFiltro.getValue();
         if (filtro == null || "Todos os tipos".equals(filtro)) return true;
-        boolean reabertura = ehReabertura(aviso);
-        return ("Reaberturas".equals(filtro) && reabertura)
-                || ("Publicações".equals(filtro) && !reabertura);
+        return filtro.equals(classificarTipo(aviso));
     }
 
     private boolean correspondePeriodo(Aviso aviso) {
@@ -342,6 +352,53 @@ public class HistoricoView {
         };
     }
 
+    private void atualizarAnosDisponiveis() {
+        String selecaoAtual = anoFiltro.getValue();
+        List<String> opcoes = new ArrayList<>(List.of("Todos os anos"));
+
+        TreeSet<Integer> anos = new TreeSet<>(Comparator.reverseOrder());
+        anos.add(LocalDate.now().getYear());
+        for (Aviso aviso : avisosCarregados) {
+            if (aviso.getDataPublicacao() != null) {
+                anos.add(aviso.getDataPublicacao().getYear());
+            }
+        }
+        for (Integer ano : anos) {
+            opcoes.add(String.valueOf(ano));
+        }
+
+        anoFiltro.getItems().setAll(opcoes);
+        anoFiltro.setValue(opcoes.contains(selecaoAtual)
+                ? selecaoAtual
+                : "Todos os anos");
+        anoFiltro.setVisibleRowCount(Math.min(8, opcoes.size()));
+    }
+
+    private boolean correspondeAno(Aviso aviso) {
+        String filtro = anoFiltro.getValue();
+        if (filtro == null || "Todos os anos".equals(filtro)) return true;
+
+        LocalDate data = aviso.getDataPublicacao();
+        return data != null && data.getYear() == Integer.parseInt(filtro);
+    }
+
+    private String classificarTipo(Aviso aviso) {
+        String criticidade = normalizar(aviso.getCriticidade());
+        String prioridade = normalizar(aviso.getPrioridade());
+
+        if (criticidade.contains("crít") || criticidade.contains("crit")
+                || prioridade.contains("imediat")) {
+            return "Crítico";
+        }
+        if (prioridade.contains("urgent") || criticidade.equals("alta")) {
+            return "Urgente";
+        }
+        if (criticidade.contains("moderad") || prioridade.equals("alta")) {
+            return "Atenção";
+        }
+        return "Normal";
+    }
+
     private boolean ehReabertura(Aviso aviso) {
         return normalizar(aviso.getAutor()).contains("reabertura");
     }
@@ -349,7 +406,8 @@ public class HistoricoView {
     private boolean filtrosAtivos() {
         return !normalizar(buscaField.getText()).isBlank()
                 || !"Todos os tipos".equals(tipoFiltro.getValue())
-                || !"Todo o período".equals(periodoFiltro.getValue());
+                || !"Todo o período".equals(periodoFiltro.getValue())
+                || !"Todos os anos".equals(anoFiltro.getValue());
     }
 
     private static String normalizar(String texto) {
@@ -410,7 +468,19 @@ public class HistoricoView {
                 ehReabertura(aviso)
                         ? "history-type-reopened"
                         : "history-type-published");
-        HBox topo = new HBox(10, titulo, tipoRegistro);
+
+        String nivel = classificarTipo(aviso);
+        Label nivelRegistro = new Label(nivel.toUpperCase(Locale.ROOT));
+        nivelRegistro.getStyleClass().addAll(
+                "history-type-badge",
+                switch (nivel) {
+                    case "Crítico" -> "history-level-critical";
+                    case "Urgente" -> "history-level-urgent";
+                    case "Atenção" -> "history-level-attention";
+                    default -> "history-level-normal";
+                });
+
+        HBox topo = new HBox(10, titulo, nivelRegistro, tipoRegistro);
         topo.setAlignment(Pos.CENTER_LEFT);
 
         // --------------------------------------------------------
@@ -724,7 +794,9 @@ public class HistoricoView {
                     avisoService.adicionar(
                             aviso.getTitulo(),
                             aviso.getMensagem(),
-                            "Central de Avisos · Reabertura");
+                            "Central de Avisos · Reabertura",
+                            aviso.getCriticidade(),
+                            aviso.getPrioridade());
                 } catch (Exception errorHistorico) {
                     alertaHistorico =
                             "Popup reaberto, mas o novo registro não pôde ser salvo.";

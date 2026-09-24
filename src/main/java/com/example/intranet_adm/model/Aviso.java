@@ -9,6 +9,8 @@ public class Aviso {
     private String mensagem;
     private String autor;
     private LocalDate dataPublicacao;
+    private String criticidade;
+    private String prioridade;
 
     public Aviso(
             int id,
@@ -17,11 +19,25 @@ public class Aviso {
             String autor,
             LocalDate dataPublicacao) {
 
+        this(id, titulo, mensagem, autor, dataPublicacao, "Informativa", "Normal");
+    }
+
+    public Aviso(
+            int id,
+            String titulo,
+            String mensagem,
+            String autor,
+            LocalDate dataPublicacao,
+            String criticidade,
+            String prioridade) {
+
         this.id = id;
         this.titulo = titulo;
         this.mensagem = mensagem;
         this.autor = autor;
         this.dataPublicacao = dataPublicacao;
+        this.criticidade = valorOuPadrao(criticidade, "Informativa");
+        this.prioridade = valorOuPadrao(prioridade, "Normal");
     }
 
     public int getId() {
@@ -62,6 +78,26 @@ public class Aviso {
 
     public void setDataPublicacao(LocalDate dataPublicacao) {
         this.dataPublicacao = dataPublicacao;
+    }
+
+    public String getCriticidade() {
+        return criticidade;
+    }
+
+    public void setCriticidade(String criticidade) {
+        this.criticidade = valorOuPadrao(criticidade, "Informativa");
+    }
+
+    public String getPrioridade() {
+        return prioridade;
+    }
+
+    public void setPrioridade(String prioridade) {
+        this.prioridade = valorOuPadrao(prioridade, "Normal");
+    }
+
+    private static String valorOuPadrao(String valor, String padrao) {
+        return valor == null || valor.isBlank() ? padrao : valor.trim();
     }
 
     @Override
