@@ -5,7 +5,6 @@ import com.example.intranet_adm.model.Popup;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -658,6 +657,10 @@ public class IntranetAvisosClient {
             // A Intranet salva os anexos em /uploads/... e devolve esse caminho
             // relativo. A Central precisa de uma URL absoluta para conseguir
             // carregar a imagem no histórico e no popup.
+            String imagemMimeType = primeiroValor(
+                    extrairCampoTexto(objeto, "imageMimeType"),
+                    extrairCampoTexto(objeto, "mimeType"),
+                    null);
             String imagem = extrairCampoTexto(objeto, "imageUrl");
             if (imagem != null && imagem.startsWith("/")) {
                 imagem = baseUrl().replaceFirst("/+$", "") + imagem;
@@ -667,7 +670,7 @@ public class IntranetAvisosClient {
             }
             if (imagem == null) {
                 String base64 = extrairCampoTexto(objeto, "imageBase64");
-                String mime = extrairCampoTexto(objeto, "imageMimeType");
+                String mime = imagemMimeType;
                 if (mime == null || mime.isBlank()) mime = "image/png";
                 if (base64 != null && !base64.isBlank()) imagem = "data:" + mime + ";base64," + base64;
             }
@@ -686,6 +689,24 @@ public class IntranetAvisosClient {
                     paginas
             );
             popup.setImagem(imagem);
+            popup.setImagemMimeType(imagemMimeType);
+            popup.setCriticidade(primeiroValor(
+                    extrairCampoTexto(objeto, "criticality"),
+                    extrairCampoTexto(objeto, "criticidade"),
+                    "informative"));
+            popup.setPrioridade(primeiroValor(
+                    extrairCampoTexto(objeto, "priority"),
+                    extrairCampoTexto(objeto, "prioridade"),
+                    "normal"));
+            popup.setLink(primeiroValor(
+                    extrairCampoTexto(objeto, "link"),
+                    extrairCampoTexto(objeto, "url"),
+                    null));
+            popup.setDataPublicacao(primeiroValor(
+                    extrairCampoTexto(objeto, "publicationDate"),
+                    extrairCampoTexto(objeto, "createdAt"),
+                    null));
+            popup.setDataExpiracao(expirationDate);
             return popup;
 
         } catch (Exception error) {
@@ -819,10 +840,30 @@ public class IntranetAvisosClient {
     public List<String[]> buscarVisitantes() throws IOException, InterruptedException {
         String body = enviarRequisicao(HttpRequest.newBuilder(URI.create(presenceEndpoint())).timeout(Duration.ofSeconds(8)).GET()).body();
         List<String[]> result = new ArrayList<>();
-        Pattern item = Pattern.compile("\\{\\s*\\\"nome\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"departamento\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"pagina\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"tempo\\\"\\s*:\\s*\\\"([^\\\"]*)\\\".*?\\\"navegador\\\"\\s*:\\s*\\\"([^\\\"]*)\\\"", Pattern.DOTALL);
+        Pattern item = Pattern.compile("\\{[^{}]*\\\"nome\\\"[^{}]*}", Pattern.DOTALL);
         Matcher matcher = item.matcher(body);
-        while (matcher.find()) result.add(new String[]{matcher.group(1), matcher.group(2), matcher.group(3), matcher.group(4), matcher.group(5)});
+        while (matcher.find()) {
+            String visitante = matcher.group();
+            result.add(new String[]{
+                    campoVisitante(visitante, "nome", "Visitante"),
+                    campoVisitante(visitante, "departamento", "Não informado"),
+                    campoVisitante(visitante, "pagina", "/"),
+                    campoVisitante(visitante, "tempo", "—"),
+                    campoVisitante(visitante, "navegador", "Não informado"),
+                    campoVisitante(visitante, "ip", "Não informado"),
+                    campoVisitante(visitante, "maquina", "Não informado"),
+                    campoVisitante(visitante, "ultimaAtividade", "")
+            });
+        }
         return result;
+    }
+
+    private static String campoVisitante(String json, String campo, String padrao) {
+        String valor = extrairCampoTexto(json, campo);
+        if (valor == null || valor.isBlank() || "null".equalsIgnoreCase(valor.trim())) {
+            return padrao;
+        }
+        return valor;
     }
 
     // ============================================================
@@ -1121,14 +1162,16 @@ public class IntranetAvisosClient {
     }
 
     public List<String> listarMensagensDoDia() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl() + DAILY_MESSAGE_PATH)).GET().build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() / 100 != 2) throw new IOException("Falha ao listar mensagens (HTTP " + response.statusCode() + ")");
+        HttpRequest.Builder request = HttpRequest.newBuilder(
+                        URI.create(baseUrl() + DAILY_MESSAGE_PATH))
+                .timeout(Duration.ofSeconds(15))
+                .GET();
+        HttpResponse<String> response = enviarRequisicao(request);
         Matcher matcher = Pattern.compile("\\\"messages\\\"\\s*:\\s*\\[(.*?)\\]", Pattern.DOTALL).matcher(response.body());
         List<String> result = new ArrayList<>();
         if (!matcher.find()) return result;
         Matcher item = Pattern.compile("\\\"((?:\\\\.|[^\\\"])*)\\\"").matcher(matcher.group(1));
-        while (item.find()) result.add(item.group(1).replace("\\\\n", "\\n").replace("\\\\\"", "\\\""));
+        while (item.find()) result.add(unescapeJson(item.group(1)));
         return result;
     }
 
@@ -1145,19 +1188,6 @@ public class IntranetAvisosClient {
     }
 
     private static String jsonEscape(String value) { return value.trim().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n"); }
-
-    private static String detectarServidorLocal() {
-        String host = "localhost";
-        try { host = InetAddress.getLocalHost().getHostAddress(); } catch (Exception ignored) { }
-        for (int porta = 3005; porta >= 3000; porta--) {
-            for (String endereco : new String[]{"localhost", host}) try {
-                HttpRequest request = HttpRequest.newBuilder(URI.create("http://" + endereco + ":" + porta + "/api/avisos")).timeout(Duration.ofMillis(500)).GET().build();
-                HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-                if (response.statusCode() >= 200 && response.statusCode() < 500) return "http://" + endereco + ":" + porta;
-            } catch (Exception ignored) { }
-        }
-        return DEFAULT_BASE_URL;
-    }
 
     public static void configurarBaseUrl(
             String url

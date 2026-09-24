@@ -1,6 +1,7 @@
 package com.example.intranet_adm.view.aviso;
 
-import javafx.scene.control.Alert;
+import com.example.intranet_adm.view.components.AppDialog;
+import javafx.stage.Window;
 
 import java.time.LocalDateTime;
 
@@ -10,9 +11,12 @@ public class AvisoFormValidation {
             AvisoFormFields fields,
             AvisoFormDates dates
     ) {
+        Window owner = fields.getTituloField().getScene() == null
+                ? null : fields.getTituloField().getScene().getWindow();
 
         if (fields.getTitulo().isBlank()) {
             mostrarErro(
+                    owner,
                     "Título obrigatório",
                     "Digite um título para o aviso."
             );
@@ -21,6 +25,7 @@ public class AvisoFormValidation {
 
         if (fields.getMensagem().isBlank()) {
             mostrarErro(
+                    owner,
                     "Mensagem obrigatória",
                     "Digite a mensagem do aviso."
             );
@@ -39,19 +44,13 @@ public class AvisoFormValidation {
                 if (uri.getHost() == null || !("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))) throw new IllegalArgumentException("Informe um link HTTP ou HTTPS válido.");
             }
         } catch (RuntimeException error) {
-            mostrarErro("Revise os campos", error.getMessage());
+            mostrarErro(owner, "Revise os campos", error.getMessage());
             return false;
         }
         return true;
     }
 
-    private void mostrarErro(String titulo, String mensagem) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-
-        alert.setTitle("Validação");
-        alert.setHeaderText(titulo);
-        alert.setContentText(mensagem);
-
-        alert.showAndWait();
+    private void mostrarErro(Window owner, String titulo, String mensagem) {
+        AppDialog.mostrarErro(owner, "Validação", titulo, mensagem);
     }
 }

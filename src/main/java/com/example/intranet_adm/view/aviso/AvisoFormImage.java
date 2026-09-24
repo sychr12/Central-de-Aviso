@@ -1,6 +1,9 @@
 package com.example.intranet_adm.view.aviso;
 
-import javafx.geometry.Insets;
+import com.example.intranet_adm.view.components.AppIcon;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -10,6 +13,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 
@@ -23,12 +27,12 @@ public class AvisoFormImage {
     private final Button selecionarButton;
     private final Button removerButton;
 
-    private Path imagemSelecionada;
+    private final ObjectProperty<Path> imagemSelecionada = new SimpleObjectProperty<>();
 
     public AvisoFormImage() {
         preview = new ImageView();
-        preview.setFitWidth(214);
-        preview.setFitHeight(124);
+        preview.setFitWidth(194);
+        preview.setFitHeight(88);
         preview.setPreserveRatio(true);
         preview.setSmooth(true);
 
@@ -40,6 +44,8 @@ public class AvisoFormImage {
         selecionarButton.getStyleClass().add("secondary-button");
         removerButton.getStyleClass().add("danger-button");
 
+        selecionarButton.setGraphic(AppIcon.create(AppIcon.Type.IMAGE, 17));
+        removerButton.setGraphic(AppIcon.create(AppIcon.Type.TRASH, 17));
         removerButton.setDisable(true);
 
         selecionarButton.setOnAction(event -> selecionarImagem(null));
@@ -48,6 +54,7 @@ public class AvisoFormImage {
 
     public VBox criarLayout() {
         VBox container = new VBox(10);
+        container.getStyleClass().add("notice-media-layout");
 
         Label placeholder = new Label("Nenhuma imagem selecionada");
         placeholder.getStyleClass().add("image-placeholder");
@@ -56,9 +63,16 @@ public class AvisoFormImage {
 
         StackPane areaPreview = new StackPane(placeholder, preview);
         areaPreview.setAlignment(Pos.CENTER);
-        areaPreview.setPrefSize(230, 140);
-        areaPreview.setMinSize(230, 140);
+        areaPreview.setMinSize(218, 108);
+        areaPreview.setPrefSize(218, 108);
+        areaPreview.setMaxSize(218, 108);
         areaPreview.getStyleClass().add("image-preview-box");
+        Rectangle recorte = new Rectangle();
+        recorte.widthProperty().bind(areaPreview.widthProperty());
+        recorte.heightProperty().bind(areaPreview.heightProperty());
+        recorte.setArcWidth(20);
+        recorte.setArcHeight(20);
+        areaPreview.setClip(recorte);
 
         HBox botoes = new HBox(10);
         botoes.getChildren().addAll(
@@ -67,10 +81,15 @@ public class AvisoFormImage {
         );
 
         nomeArquivo.getStyleClass().add("image-file-name");
+        nomeArquivo.setMaxWidth(Double.MAX_VALUE);
+        nomeArquivo.setEllipsisString("…");
         VBox detalhes = new VBox(10, nomeArquivo, botoes);
         detalhes.setAlignment(Pos.CENTER_LEFT);
+        detalhes.setMinWidth(0);
         HBox layout = new HBox(16, areaPreview, detalhes);
         layout.setAlignment(Pos.CENTER_LEFT);
+        layout.setMinWidth(0);
+        layout.getStyleClass().add("notice-media-row");
         HBox.setHgrow(detalhes, Priority.ALWAYS);
         container.getChildren().add(layout);
 
@@ -100,7 +119,7 @@ public class AvisoFormImage {
             return;
         }
 
-        imagemSelecionada = arquivo.toPath();
+        imagemSelecionada.set(arquivo.toPath());
 
         if (!arquivo.getName().toLowerCase().endsWith(".pdf")) {
             preview.setImage(new Image(arquivo.toURI().toString()));
@@ -116,13 +135,17 @@ public class AvisoFormImage {
     }
 
     public void removerImagem() {
-        imagemSelecionada = null;
+        imagemSelecionada.set(null);
         preview.setImage(null);
         nomeArquivo.setText("Nenhuma imagem selecionada");
         removerButton.setDisable(true);
     }
 
     public Path getImagemSelecionada() {
+        return imagemSelecionada.get();
+    }
+
+    public ReadOnlyObjectProperty<Path> imagemSelecionadaProperty() {
         return imagemSelecionada;
     }
 

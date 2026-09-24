@@ -8,7 +8,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
@@ -61,14 +60,18 @@ public class AvisoFormDates {
 
     public VBox criarLayout() {
         VBox container = new VBox(12);
+        container.getStyleClass().add("notice-dates-layout");
 
         Label publicacaoLabel = new Label("Publicação");
         Label expiracaoLabel = new Label("Expiração");
+        publicacaoLabel.getStyleClass().add("notice-field-label");
+        expiracaoLabel.getStyleClass().add("notice-field-label");
 
         Label ajuda = new Label("Escolha quando o aviso será exibido e se deve expirar automaticamente.");
         ajuda.setWrapText(true);
         ajuda.getStyleClass().add("card-description");
         HBox opcoes = new HBox(18, publicarImediatamente, popupTemporario);
+        opcoes.getStyleClass().add("notice-toggle-row");
 
         HBox publicacaoCampos = new HBox(8, dataPublicacao, horaPublicacao);
         HBox expiracaoCampos = new HBox(8, dataExpiracao, horaExpiracao);
@@ -78,7 +81,9 @@ public class AvisoFormDates {
         HBox.setHgrow(dataExpiracao, Priority.ALWAYS);
         VBox publicacao = new VBox(6, publicacaoLabel, publicacaoCampos);
         VBox expiracao = new VBox(6, expiracaoLabel, expiracaoCampos);
-        VBox linha = new VBox(12, publicacao, expiracao);
+        publicacao.getStyleClass().add("notice-date-group");
+        expiracao.getStyleClass().add("notice-date-group");
+        HBox linha = new HBox(12, publicacao, expiracao);
         HBox.setHgrow(publicacao, Priority.ALWAYS);
         HBox.setHgrow(expiracao, Priority.ALWAYS);
         container.getChildren().addAll(ajuda, opcoes, linha);

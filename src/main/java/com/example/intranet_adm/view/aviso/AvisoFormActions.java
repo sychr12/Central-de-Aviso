@@ -2,7 +2,19 @@ package com.example.intranet_adm.view.aviso;
 
 import com.example.intranet_adm.service.AvisoService;
 import com.example.intranet_adm.service.IntranetAvisosClient;
-import javafx.scene.control.Alert;
+import com.example.intranet_adm.view.components.AppIcon;
+import javafx.application.Platform;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 
 public class AvisoFormActions {
 
@@ -73,12 +85,23 @@ public class AvisoFormActions {
                             .comAtivo(true)
                             .comPodeFechar(true);
 
+            String criticidadeHistorico = fields.getCriticidade();
+            String prioridadeHistorico = fields.getPrioridade();
+
             enviando.set(true);
             javafx.concurrent.Task<String> task = new javafx.concurrent.Task<>() {
                 @Override protected String call() throws Exception {
                     client.enviar(config);
                     try {
-                        if (avisoService != null) avisoService.adicionar(config.getTitulo(), config.getMensagem(), "Central de Avisos");
+                        if (avisoService != null) {
+                            avisoService.adicionar(
+                                    config.getTitulo(),
+                                    config.getMensagem(),
+                                    "Central de Avisos",
+                                    criticidadeHistorico,
+                                    prioridadeHistorico
+                            );
+                        }
                         return null;
                     } catch (Exception error) {
                         return "O aviso foi publicado, mas o histórico local não pôde ser salvo. Não envie novamente.";
@@ -143,33 +166,103 @@ public class AvisoFormActions {
             String titulo,
             String mensagem
     ) {
-        Alert alert = new Alert(
-                Alert.AlertType.INFORMATION
-        );
-
-        alert.setTitle("Central de Avisos");
-        alert.setHeaderText(titulo);
-        alert.setContentText(mensagem);
-
-        alert.showAndWait();
+        mostrarResultado(titulo, mensagem, true);
     }
 
     private void mostrarErro(
             String titulo,
             String mensagem
     ) {
-        Alert alert = new Alert(
-                Alert.AlertType.ERROR
+        mostrarResultado(
+                titulo,
+                mensagem == null ? "Ocorreu um erro." : mensagem,
+                false
+        );
+    }
+
+    private void mostrarResultado(
+            String titulo,
+            String mensagem,
+            boolean sucesso
+    ) {
+        Dialog<ButtonType> dialogo = new Dialog<>();
+        dialogo.setTitle(sucesso ? "Publicação concluída" : "Falha na publicação");
+        dialogo.initModality(Modality.APPLICATION_MODAL);
+        if (fields.getTituloField().getScene() != null
+                && fields.getTituloField().getScene().getWindow() != null) {
+            dialogo.initOwner(fields.getTituloField().getScene().getWindow());
+        }
+
+        ButtonType concluir = new ButtonType(
+                "Entendi", ButtonBar.ButtonData.OK_DONE);
+
+        AppIcon.Type tipoIcone = sucesso
+                ? AppIcon.Type.SEND : AppIcon.Type.INFO;
+        StackPane icone = new StackPane(AppIcon.create(tipoIcone, 24));
+        icone.getStyleClass().addAll(
+                "publish-result-icon",
+                sucesso ? "publish-result-icon-success" : "publish-result-icon-error"
         );
 
-        alert.setTitle("Central de Avisos");
-        alert.setHeaderText(titulo);
-        alert.setContentText(
-                mensagem == null
-                        ? "Ocorreu um erro."
-                        : mensagem
+        Label contexto = new Label(
+                sucesso ? "PUBLICAÇÃO CONCLUÍDA" : "ATENÇÃO");
+        contexto.getStyleClass().addAll(
+                "publish-result-eyebrow",
+                sucesso ? "publish-result-eyebrow-success" : "publish-result-eyebrow-error"
         );
 
-        alert.showAndWait();
+        Label tituloLabel = new Label(titulo);
+        tituloLabel.setWrapText(true);
+        tituloLabel.getStyleClass().add("publish-result-title");
+
+        VBox titulos = new VBox(3, contexto, tituloLabel);
+        HBox cabecalho = new HBox(13, icone, titulos);
+        cabecalho.setAlignment(Pos.CENTER_LEFT);
+
+        Label descricao = new Label(mensagem);
+        descricao.setWrapText(true);
+        descricao.setMaxWidth(Double.MAX_VALUE);
+        descricao.getStyleClass().add("publish-result-description");
+
+        Label observacao = new Label(
+                sucesso
+                        ? "O aviso seguirá a programação e as regras definidas no formulário."
+                        : "Revise as informações acima antes de tentar publicar novamente."
+        );
+        observacao.setWrapText(true);
+        observacao.setMaxWidth(Double.MAX_VALUE);
+        observacao.getStyleClass().addAll(
+                "publish-result-note",
+                sucesso ? "publish-result-note-success" : "publish-result-note-error"
+        );
+
+        VBox conteudo = new VBox(17, cabecalho, descricao, observacao);
+        conteudo.getStyleClass().add("publish-result-content");
+
+        DialogPane painel = dialogo.getDialogPane();
+        painel.setContent(conteudo);
+        painel.getButtonTypes().setAll(concluir);
+        painel.getStyleClass().add("publish-result-dialog");
+        painel.setMinWidth(500);
+
+        var estiloBase = getClass().getResource(
+                "/com/example/intranet_adm/style.css");
+        var estiloRedesign = getClass().getResource(
+                "/com/example/intranet_adm/redesign.css");
+        if (estiloBase != null) {
+            painel.getStylesheets().add(estiloBase.toExternalForm());
+        }
+        if (estiloRedesign != null) {
+            painel.getStylesheets().add(estiloRedesign.toExternalForm());
+        }
+
+        Button botaoConcluir = (Button) painel.lookupButton(concluir);
+        botaoConcluir.getStyleClass().add("primary-button");
+        botaoConcluir.setGraphic(AppIcon.create(
+                sucesso ? AppIcon.Type.SEND : AppIcon.Type.CLOSE, 16));
+        botaoConcluir.setDefaultButton(true);
+        Platform.runLater(botaoConcluir::requestFocus);
+
+        dialogo.showAndWait();
     }
 }

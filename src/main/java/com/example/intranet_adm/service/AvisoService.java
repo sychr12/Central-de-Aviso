@@ -27,6 +27,8 @@ import java.util.List;
 public class AvisoService {
 
     private static final int LIMITE_AVISOS = 10_000;
+    private static final int STORAGE_MAGIC = 0x43415632;
+    private static final int STORAGE_VERSION = 2;
 
     private static final Path DEFAULT_STORAGE =
             defaultStorage();
@@ -84,6 +86,23 @@ public class AvisoService {
             String autor
     ) {
 
+        return adicionar(
+                titulo,
+                mensagem,
+                autor,
+                "Informativa",
+                "Normal"
+        );
+    }
+
+    public synchronized Aviso adicionar(
+            String titulo,
+            String mensagem,
+            String autor,
+            String criticidade,
+            String prioridade
+    ) {
+
         validarTexto(
                 titulo,
                 "O título é obrigatório."
@@ -105,7 +124,9 @@ public class AvisoService {
                         titulo.trim(),
                         mensagem.trim(),
                         autor.trim(),
-                        LocalDate.now()
+                        LocalDate.now(),
+                        criticidade,
+                        prioridade
                 );
 
         avisos.add(
@@ -303,8 +324,19 @@ public class AvisoService {
                         )
         ) {
 
-            int total =
-                    input.readInt();
+            int cabecalho = input.readInt();
+            boolean formatoAtual = cabecalho == STORAGE_MAGIC;
+            int total;
+
+            if (formatoAtual) {
+                int versao = input.readInt();
+                if (versao != STORAGE_VERSION) {
+                    throw new IOException("Versão do histórico não suportada.");
+                }
+                total = input.readInt();
+            } else {
+                total = cabecalho;
+            }
 
             if (
                     total < 0 ||
@@ -342,13 +374,23 @@ public class AvisoService {
                                 epochDay
                         );
 
+                String criticidade = formatoAtual
+                        ? input.readUTF()
+                        : "Informativa";
+
+                String prioridade = formatoAtual
+                        ? input.readUTF()
+                        : "Normal";
+
                 Aviso aviso =
                         new Aviso(
                                 id,
                                 titulo,
                                 mensagem,
                                 autor,
-                                data
+                                data,
+                                criticidade,
+                                prioridade
                         );
 
                 avisos.add(
@@ -420,9 +462,9 @@ public class AvisoService {
                             )
             ) {
 
-                output.writeInt(
-                        avisos.size()
-                );
+                output.writeInt(STORAGE_MAGIC);
+                output.writeInt(STORAGE_VERSION);
+                output.writeInt(avisos.size());
 
                 for (
                         Aviso aviso :
@@ -449,6 +491,9 @@ public class AvisoService {
                             aviso.getDataPublicacao()
                                     .toEpochDay()
                     );
+
+                    output.writeUTF(aviso.getCriticidade());
+                    output.writeUTF(aviso.getPrioridade());
                 }
             }
 

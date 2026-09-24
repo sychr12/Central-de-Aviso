@@ -12,6 +12,12 @@ public class Popup {
     private String tamanho;
     private String paginas;
     private String imagem;
+    private String imagemMimeType;
+    private String criticidade = "informative";
+    private String prioridade = "normal";
+    private String link;
+    private String dataPublicacao;
+    private String dataExpiracao;
 
     public Popup(
             String id,
@@ -84,6 +90,36 @@ public class Popup {
     }
     public String getImagem() { return imagem; }
     public void setImagem(String imagem) { this.imagem = imagem; }
+
+    public String getImagemMimeType() { return imagemMimeType; }
+    public void setImagemMimeType(String imagemMimeType) {
+        this.imagemMimeType = imagemMimeType;
+    }
+
+    public String getCriticidade() { return criticidade; }
+    public void setCriticidade(String criticidade) {
+        this.criticidade = criticidade == null || criticidade.isBlank()
+                ? "informative" : criticidade.trim();
+    }
+
+    public String getPrioridade() { return prioridade; }
+    public void setPrioridade(String prioridade) {
+        this.prioridade = prioridade == null || prioridade.isBlank()
+                ? "normal" : prioridade.trim();
+    }
+
+    public String getLink() { return link; }
+    public void setLink(String link) { this.link = link; }
+
+    public String getDataPublicacao() { return dataPublicacao; }
+    public void setDataPublicacao(String dataPublicacao) {
+        this.dataPublicacao = dataPublicacao;
+    }
+
+    public String getDataExpiracao() { return dataExpiracao; }
+    public void setDataExpiracao(String dataExpiracao) {
+        this.dataExpiracao = dataExpiracao;
+    }
 
     public void setPaginas(String paginas) {
         this.paginas = paginas;

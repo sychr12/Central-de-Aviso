@@ -3,6 +3,7 @@ package com.example.intranet_adm.view;
 import com.example.intranet_adm.service.AvisoService;
 import com.example.intranet_adm.service.IntranetAvisosClient;
 import com.example.intranet_adm.view.aviso.AvisoFormView;
+import com.example.intranet_adm.view.components.AppIcon;
 import com.example.intranet_adm.view.configuracao.ConfiguracoesView;
 import com.example.intranet_adm.view.historico.HistoricoView;
 import com.example.intranet_adm.view.mensagem.MensagemDoDiaView;
@@ -14,6 +15,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -29,7 +31,7 @@ import java.util.List;
 
 public final class CentralAvisosView {
 
-    private static final int SIDEBAR_WIDTH = 232;
+    private static final int SIDEBAR_WIDTH = 210;
     private static final int CARD_SPACING = 16;
 
     private final BorderPane root =
@@ -93,6 +95,9 @@ public final class CentralAvisosView {
     // ============================================================
 
     private void configurarEstilos() {
+        root.getStylesheets().add(getClass()
+                .getResource("/com/example/intranet_adm/redesign.css")
+                .toExternalForm());
 
         if (!root.getStyleClass().contains("central-root")) {
 
@@ -130,7 +135,7 @@ public final class CentralAvisosView {
         scroll.getStyleClass()
                 .add("central-scroll");
 
-        content.setPadding(new Insets(26, 30, 30, 30));
+        content.setPadding(new Insets(18, 24, 28, 24));
 
         content.setFillWidth(true);
 
@@ -141,66 +146,13 @@ public final class CentralAvisosView {
     }
 
     // ============================================================
-    // CABEÇALHO
-    // ============================================================
-
-    private Node criarCabecalho() {
-
-        HBox bar =
-                new HBox();
-
-        bar.setAlignment(
-                Pos.CENTER_LEFT
-        );
-
-        bar.setSpacing(10);
-
-        bar.getStyleClass()
-                .add("central-topbar");
-
-        Label icone =
-                new Label("✦");
-
-        Label titulo =
-                new Label(
-                        "Central de Avisos - Enviar Popup"
-                );
-
-        titulo.getStyleClass()
-                .add("window-title");
-
-        Region spacer =
-                new Region();
-
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
-        );
-
-        Label controles =
-                new Label(
-                        "—     □     ×"
-                );
-
-        bar.getChildren()
-                .addAll(
-                        icone,
-                        titulo,
-                        spacer,
-                        controles
-                );
-
-        return bar;
-    }
-
-    // ============================================================
     // MENU LATERAL
     // ============================================================
 
     private Node criarMenu(Stage stage) {
 
         VBox menu =
-                new VBox(10);
+                new VBox(5);
 
         menu.setPrefWidth(
                 SIDEBAR_WIDTH
@@ -219,6 +171,7 @@ public final class CentralAvisosView {
 
         HBox marca = new HBox(10, criarLogo(), criarIdentidade());
         marca.setAlignment(Pos.CENTER_LEFT);
+        marca.getStyleClass().add("central-brand-row");
 
         menu.getChildren().addAll(
                         marca,
@@ -260,6 +213,9 @@ public final class CentralAvisosView {
                         )
                 );
 
+        menu.getChildren().add(1, criarTituloSecao("COMUNICAÇÃO"));
+        menu.getChildren().add(5, criarTituloSecao("ADMINISTRAÇÃO"));
+
         Region spacer =
                 new Region();
 
@@ -300,6 +256,11 @@ public final class CentralAvisosView {
         logo.getStyleClass()
                 .add("central-logo");
 
+        logo.setText("");
+        logo.setGraphic(AppIcon.create(AppIcon.Type.BELL, 21));
+        logo.setAlignment(Pos.CENTER);
+        logo.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+        logo.setGraphicTextGap(0);
         return logo;
     }
 
@@ -310,6 +271,7 @@ public final class CentralAvisosView {
     private VBox criarIdentidade() {
         Label titulo = new Label("CENTRAL\nComunicação interna");
         titulo.getStyleClass().add("central-brand");
+        titulo.setText("Central\nIntranet IDAM");
         VBox identidade = new VBox(titulo);
         identidade.getStyleClass().add("brand-block");
         return identidade;
@@ -325,8 +287,12 @@ public final class CentralAvisosView {
             boolean ativo
     ) {
 
+        String rotulo = texto.substring(texto.indexOf(' ') + 1).trim();
         MFXButton button =
-                new MFXButton(texto);
+                new MFXButton(rotulo);
+
+        button.setGraphic(AppIcon.create(iconeNavegacao(rotulo), 18));
+        button.setGraphicTextGap(11);
 
         button.setMaxWidth(
                 Double.MAX_VALUE
@@ -353,6 +319,22 @@ public final class CentralAvisosView {
         );
 
         return button;
+    }
+
+    private Label criarTituloSecao(String texto) {
+        Label titulo = new Label(texto);
+        titulo.getStyleClass().add("sidebar-section-title");
+        return titulo;
+    }
+
+    private AppIcon.Type iconeNavegacao(String rotulo) {
+        if (rotulo.contains("Novo")) return AppIcon.Type.PLUS;
+        if (rotulo.contains("Popups")) return AppIcon.Type.POPUP;
+        if (rotulo.contains("Histórico")) return AppIcon.Type.HISTORY;
+        if (rotulo.contains("Acessando")) return AppIcon.Type.USERS;
+        if (rotulo.contains("Mensagem")) return AppIcon.Type.MESSAGE;
+        if (rotulo.contains("Configurações")) return AppIcon.Type.SETTINGS;
+        return AppIcon.Type.LOGOUT;
     }
 
     // ============================================================
@@ -415,9 +397,21 @@ public final class CentralAvisosView {
             String titulo
     ) {
 
-        if (monitorView != null) { monitorView.pararAtualizacaoAutomatica(); monitorView = null; }
+        if (monitorView != null) monitorView.pausarAtualizacaoAutomatica();
         content.getChildren()
                 .clear();
+
+        String secao = titulo.equals("Configurações")
+                || titulo.equals("Acessando Agora")
+                ? "Administração" : "Comunicação";
+        HBox breadcrumb = new HBox(7,
+                new Label("Intranet"),
+                new Label("/"),
+                new Label(secao),
+                new Label("/"),
+                new Label(titulo));
+        breadcrumb.setAlignment(Pos.CENTER_LEFT);
+        breadcrumb.getStyleClass().add("breadcrumb");
 
         Label cabecalho =
                 new Label(titulo);
@@ -437,7 +431,8 @@ public final class CentralAvisosView {
 
         VBox tituloPagina =
                 new VBox(
-                        5,
+                        3,
+                        breadcrumb,
                         cabecalho,
                         descricao
                 );
@@ -536,7 +531,8 @@ public final class CentralAvisosView {
 
         HistoricoView historicoView =
                 new HistoricoView(
-                        avisoService
+                        avisoService,
+                        client
                 );
 
         content.getChildren()
@@ -551,14 +547,17 @@ public final class CentralAvisosView {
 
     private void monitorAcessos() {
 
-        prepararTela(
-                "Acessando Agora"
-        );
+        content.getChildren()
+                .clear();
 
-        monitorView =
-                new MonitorAcessosView(
-                        client
-                );
+        if (monitorView == null) {
+            monitorView =
+                    new MonitorAcessosView(
+                            client
+                    );
+        } else {
+            monitorView.retomarAtualizacaoAutomatica();
+        }
 
         content.getChildren()
                 .add(
