@@ -8,13 +8,11 @@
 .central-logo { -fx-background-color: #345de3; -fx-text-fill: white; -fx-padding: 10 12; -fx-font-size: 22px; -fx-background-radius: 12; }
 .central-brand { -fx-text-fill: #ffffff; -fx-font-size: 13px; -fx-font-weight: bold; }
 .brand-block { -fx-padding: 8 0 24 0; }
-.sidebar-subtitle, .connection { -fx-text-fill: #a6b6d2; -fx-font-size: 10px; -fx-padding: 14 4 0 4; }
+.connection { -fx-text-fill: #a6b6d2; -fx-font-size: 10px; -fx-padding: 14 4 0 4; }
 .central-nav, .central-nav-active { -fx-padding: 14 12; -fx-font-size: 13px; -fx-alignment: CENTER_LEFT; -fx-background-radius: 9; -fx-cursor: hand; -fx-background-insets: 0; }
 .central-nav { -fx-background-color: transparent; -fx-text-fill: #c1cce0; }
 .central-nav:hover { -fx-background-color: #223657; -fx-text-fill: white; }
 .central-nav-active { -fx-background-color: #345de3; -fx-text-fill: white; -fx-font-weight: bold; }
-.central-topbar { -fx-background-color: white; -fx-padding: 16 24; }
-.window-title { -fx-text-fill: #172b4d; -fx-font-weight: bold; }
 .page-heading { -fx-padding: 0 0 12 0; }
 .central-page-title, .page-title, .view-title, .monitor-title { -fx-text-fill: #172b4d; -fx-font-size: 28px; -fx-font-weight: bold; }
 .page-eyebrow { -fx-text-fill: #345de3; -fx-font-weight: bold; }

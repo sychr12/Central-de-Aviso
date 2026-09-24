@@ -29,11 +29,13 @@
             <version>11.17.0</version>
         </dependency>
 
+        <!-- Exigida pelo módulo MaterialFX no module-path, mesmo sem telas FXML próprias. -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+
     </dependencies>
 
     <build>

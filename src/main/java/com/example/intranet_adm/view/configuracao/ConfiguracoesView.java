@@ -86,7 +86,7 @@ public class ConfiguracoesView {
     private VBox criarCardConexao() {
 
         VBox card = criarCard();
-        card.getStyleClass().add(\u0022settings-connection-card\u0022);
+        card.getStyleClass().add("settings-connection-card");
 
         Label titulo = new Label("Conexão com a Intranet-IDAM");
 
@@ -197,7 +197,7 @@ public class ConfiguracoesView {
     private VBox criarCardSistema() {
 
         VBox card = criarCard();
-        card.getStyleClass().add(\u0022settings-system-card\u0022);
+        card.getStyleClass().add("settings-system-card");
 
         Label titulo = new Label("Informações do sistema");
 

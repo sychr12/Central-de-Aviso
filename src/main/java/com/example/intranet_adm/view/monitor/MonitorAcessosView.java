@@ -19,6 +19,7 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -57,10 +58,11 @@ public final class MonitorAcessosView {
     private final Label quantidadeAtivos = new Label("0 ativos");
     private final Button atualizarButton = new Button("↻");
     private final VBox linhasVisitantes = new VBox();
+    private final ScrollPane visitantesScrollPane = new ScrollPane(linhasVisitantes);
     private final ComboBox<String> quantidadeVisitantesComboBox = new ComboBox<>();
     private List<String[]> visitantesCarregados = List.of();
     private final XYChart.Series<String, Number> serieAtividade = new XYChart.Series<>();
-    private final Label estadoGrafico = new Label(\u0022Aguardando a primeira leitura de atividade...\u0022);
+    private final Label estadoGrafico = new Label("Aguardando a primeira leitura de atividade...");
 
     private Timeline atualizacaoAutomatica;
     private PauseTransition segundaLeituraInicial;
@@ -85,12 +87,12 @@ public final class MonitorAcessosView {
 
     private Node criarCabecalho() {
         HBox breadcrumb = new HBox(7,
-                new Label(\u0022Intranet\u0022),
-                new Label(\u0022/\u0022),
-                new Label(\u0022Administra\u00e7\u00e3o\u0022),
-                new Label(\u0022/\u0022),
-                new Label(\u0022Acessando agora\u0022));
-        breadcrumb.getStyleClass().add(\u0022breadcrumb\u0022);
+                new Label("Intranet"),
+                new Label("/"),
+                new Label("Administração"),
+                new Label("/"),
+                new Label("Acessando agora"));
+        breadcrumb.getStyleClass().add("breadcrumb");
         Label titulo = new Label("Acessando agora");
         titulo.getStyleClass().add("central-page-title");
         estadoTempoReal.getStyleClass().add("monitor-live");
@@ -98,7 +100,7 @@ public final class MonitorAcessosView {
         atualizarButton.getStyleClass().add("monitor-refresh");
         atualizarButton.setTooltip(new Tooltip("Atualizar agora"));
         atualizarButton.setAccessibleText("Atualizar dados de acesso");
-        atualizarButton.setText(\u0022\u0022);
+        atualizarButton.setText("");
         atualizarButton.setGraphic(AppIcon.create(AppIcon.Type.REFRESH, 19));
         atualizarButton.setOnAction(event -> atualizar());
         Region espaco = new Region();
@@ -125,10 +127,10 @@ public final class MonitorAcessosView {
 
     private VBox criarCartaoMetrica(String icone, Label valor, String descricao) {
         Label iconeLabel = new Label(icone);
-        iconeLabel.setText(\u0022\u0022);
-        AppIcon.Type tipo = descricao.contains(\u0022online\u0022)
+        iconeLabel.setText("");
+        AppIcon.Type tipo = descricao.contains("online")
                 ? AppIcon.Type.USERS
-                : descricao.contains(\u0022hoje\u0022)
+                : descricao.contains("hoje")
                 ? AppIcon.Type.HISTORY : AppIcon.Type.USERS;
         iconeLabel.setGraphic(AppIcon.create(tipo, 21));
         iconeLabel.getStyleClass().add("monitor-icon-small");
@@ -179,7 +181,7 @@ public final class MonitorAcessosView {
         estadoGrafico.setWrapText(true);
         estadoGrafico.setMaxWidth(Double.MAX_VALUE);
         estadoGrafico.setAlignment(Pos.CENTER);
-        estadoGrafico.getStyleClass().add(\u0022monitor-chart-empty\u0022);
+        estadoGrafico.getStyleClass().add("monitor-chart-empty");
         grafico.visibleProperty().bind(estadoGrafico.visibleProperty().not());
         StackPane areaGrafico = new StackPane(grafico, estadoGrafico);
         areaGrafico.setMinHeight(180);
@@ -190,14 +192,14 @@ public final class MonitorAcessosView {
 
     private Node criarTabelaVisitantes() {
         quantidadeVisitantesComboBox.getItems().addAll(
-                \u002210\u0022, \u002250\u0022, \u0022100\u0022, \u0022Todos\u0022);
-        quantidadeVisitantesComboBox.setValue(\u002210\u0022);
+                "10", "50", "100", "Todos");
+        quantidadeVisitantesComboBox.setValue("10");
         quantidadeVisitantesComboBox.setPrefWidth(100);
-        quantidadeVisitantesComboBox.getStyleClass().add(\u0022list-limit-selector\u0022);
+        quantidadeVisitantesComboBox.getStyleClass().add("list-limit-selector");
         quantidadeVisitantesComboBox.setOnAction(
                 event -> preencherVisitantes(visitantesCarregados));
-        Label exibirLabel = new Label(\u0022Exibir\u0022);
-        exibirLabel.getStyleClass().add(\u0022list-limit-label\u0022);
+        Label exibirLabel = new Label("Exibir");
+        exibirLabel.getStyleClass().add("list-limit-label");
         Label titulo = new Label("Dispositivos conectados");
         titulo.getStyleClass().add("card-title");
         quantidadeAtivos.getStyleClass().add("monitor-active-count");
@@ -210,8 +212,14 @@ public final class MonitorAcessosView {
                 new String[]{"Dispositivo", "Endereço IP", "Última atividade",
                         "Tempo conectado", "Status"}, "monitor-table-header");
         linhasVisitantes.getStyleClass().add("monitor-table-body");
+        linhasVisitantes.setMaxWidth(Double.MAX_VALUE);
+        visitantesScrollPane.setFitToWidth(true);
+        visitantesScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        visitantesScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        visitantesScrollPane.setPannable(true);
+        visitantesScrollPane.getStyleClass().add("monitor-users-scroll");
         preencherVisitantes(List.of());
-        VBox cartao = new VBox(10, cabecalho, colunas, linhasVisitantes);
+        VBox cartao = new VBox(10, cabecalho, colunas, visitantesScrollPane);
         cartao.getStyleClass().addAll("monitor-card", "monitor-table-card");
         return cartao;
     }
@@ -245,14 +253,15 @@ public final class MonitorAcessosView {
         linhasVisitantes.getChildren().clear();
         quantidadeAtivos.setText(pessoas.size() == 1 ? "1 ativo" : pessoas.size() + " ativos");
         int quantidade = Math.min(obterLimiteVisitantes(), pessoas.size());
-        quantidadeAtivos.setText(\u0022Exibindo \u0022 + quantidade
-                + \u0022 de \u0022 + pessoas.size());
+        quantidadeAtivos.setText("Exibindo " + quantidade
+                + " de " + pessoas.size());
         if (pessoas.isEmpty()) {
             Label vazio = new Label("Nenhum dispositivo conectado no momento.");
             vazio.getStyleClass().add("monitor-table-empty");
             vazio.setMaxWidth(Double.MAX_VALUE);
             vazio.setAlignment(Pos.CENTER);
             linhasVisitantes.getChildren().add(vazio);
+            ajustarAlturaListaVisitantes(1);
             return;
         }
 
@@ -272,10 +281,20 @@ public final class MonitorAcessosView {
             linha.setOnMouseClicked(event ->
                     notificar("Dispositivo selecionado: " + maquina + " (" + ip + ")"));
             if (indice % 2 == 1) {
-                linha.getStyleClass().add(\u0022monitor-table-row-alt\u0022);
+                linha.getStyleClass().add("monitor-table-row-alt");
             }
             linhasVisitantes.getChildren().add(linha);
         }
+        ajustarAlturaListaVisitantes(quantidade);
+    }
+
+    private void ajustarAlturaListaVisitantes(int quantidadeExibida) {
+        int linhasVisiveis = Math.min(Math.max(quantidadeExibida, 1), 9);
+        double altura = Math.max(70, linhasVisiveis * 49.0);
+        visitantesScrollPane.setMinHeight(altura);
+        visitantesScrollPane.setPrefHeight(altura);
+        visitantesScrollPane.setMaxHeight(altura);
+        visitantesScrollPane.setVvalue(0);
     }
 
     private HBox criarLinhaDispositivo(
@@ -347,7 +366,7 @@ public final class MonitorAcessosView {
 
     private int obterLimiteVisitantes() {
         String valorSelecionado = quantidadeVisitantesComboBox.getValue();
-        if (valorSelecionado == null || \u0022Todos\u0022.equals(valorSelecionado)) {
+        if (valorSelecionado == null || "Todos".equals(valorSelecionado)) {
             return Integer.MAX_VALUE;
         }
         try {
@@ -368,9 +387,9 @@ public final class MonitorAcessosView {
     }
 
     private String formatarTempo(String tempo) {
-        if (tempo == null || tempo.isBlank() || \u0022—\u0022.equals(tempo)) return \u0022—\u0022;
+        if (tempo == null || tempo.isBlank() || "—".equals(tempo)) return "—";
         java.util.regex.Matcher matcher = java.util.regex.Pattern
-                .compile(\u0022(\\d+)\\s*min\u0022, java.util.regex.Pattern.CASE_INSENSITIVE)
+                .compile("(\\d+)\\s*min", java.util.regex.Pattern.CASE_INSENSITIVE)
                 .matcher(tempo.trim());
         if (!matcher.find()) return tempo;
 
@@ -379,10 +398,10 @@ public final class MonitorAcessosView {
         long horas = (totalMinutos % (24 * 60)) / 60;
         long minutos = totalMinutos % 60;
 
-        if (dias > 0) return dias + \u0022 d \u0022 + horas + \u0022 h \u0022
-                + minutos + \u0022 min\u0022;
-        if (horas > 0) return horas + \u0022 h \u0022 + minutos + \u0022 min\u0022;
-        return minutos + \u0022 min\u0022;
+        if (dias > 0) return dias + " d " + horas + " h "
+                + minutos + " min";
+        if (horas > 0) return horas + " h " + minutos + " min";
+        return minutos + " min";
     }
 
     private String valor(String[] valores, int indice) {
@@ -458,8 +477,8 @@ public final class MonitorAcessosView {
         serieAtividade.getData().add(
                 new XYChart.Data<>(LocalTime.now().format(HORARIO), quantidadeOnline));
         if (serieAtividade.getData().size() == 1) {
-            estadoGrafico.setText(\u0022\u0022 + quantidadeOnline
-                    + \u0022 dispositivos online agora. Coletando a pr\u00f3xima leitura para mostrar a evolu\u00e7\u00e3o.\u0022);
+            estadoGrafico.setText("" + quantidadeOnline
+                    + " dispositivos online agora. Coletando a próxima leitura para mostrar a evolução.");
         }
         estadoGrafico.setVisible(serieAtividade.getData().size() < 2);
         if (serieAtividade.getData().size() > LIMITE_PONTOS_GRAFICO) {

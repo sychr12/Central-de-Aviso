@@ -1,11 +1,14 @@
 package com.example.intranet_adm.view.historico;
 
 import com.example.intranet_adm.model.Aviso;
+import com.example.intranet_adm.model.Popup;
 import com.example.intranet_adm.service.AvisoService;
 import com.example.intranet_adm.service.IntranetAvisosClient;
 import com.example.intranet_adm.view.components.AppIcon;
+import com.example.intranet_adm.view.components.PopupMediaView;
 
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -17,11 +20,12 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
@@ -41,11 +45,10 @@ public class HistoricoView {
     private final ComboBox<String> anoFiltro = new ComboBox<>();
     private final ComboBox<String> ordemFiltro = new ComboBox<>();
     private final List<Aviso> avisosCarregados = new ArrayList<>();
+    private final Map<String, Popup> popupsPorConteudo = new HashMap<>();
+    private long requisicaoMidias;
 
     private Consumer<String> onMessage;
-
-    private static final DateTimeFormatter DATA_FORMATTER =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public HistoricoView(AvisoService avisoService) {
         this(avisoService, new IntranetAvisosClient());
@@ -114,30 +117,6 @@ public class HistoricoView {
                 statusLabel,
                 scrollPane
         );
-    }
-
-    // ============================================================
-    // TÍTULO
-    // ============================================================
-
-    private Label criarTitulo() {
-
-        Label titulo = new Label(
-                "Histórico de Avisos"
-        );
-
-        titulo.setFont(
-                Font.font(
-                        "System",
-                        FontWeight.BOLD,
-                        28
-                )
-        );
-
-        titulo.setTextFill(
-                Color.web("#172B4D")
-        );
-        return titulo;
     }
 
     // ============================================================
@@ -274,6 +253,7 @@ public class HistoricoView {
             atualizarAnosDisponiveis();
             statusLabel.setText("");
             aplicarFiltros();
+            carregarMidiasDoServidor();
 
         } catch (Exception error) {
             mostrarStatus(
@@ -281,6 +261,51 @@ public class HistoricoView {
                     false
             );
         }
+    }
+
+    private void carregarMidiasDoServidor() {
+        long requisicaoAtual = ++requisicaoMidias;
+        Task<List<Popup>> tarefa = new Task<>() {
+            @Override
+            protected List<Popup> call() throws Exception {
+                return client.listarPopups();
+            }
+        };
+        tarefa.setOnSucceeded(event -> {
+            if (requisicaoAtual != requisicaoMidias) return;
+            popupsPorConteudo.clear();
+            List<Popup> popups = tarefa.getValue();
+            if (popups != null) {
+                for (Popup popup : popups) {
+                    String chave = chaveConteudo(
+                            popup.getTitulo(), popup.getMensagem());
+                    popupsPorConteudo.merge(chave, popup,
+                            (atual, candidato) -> semImagem(atual)
+                                    && !semImagem(candidato)
+                                    ? candidato : atual);
+                }
+            }
+            aplicarFiltros();
+        });
+        Thread thread = new Thread(tarefa, "historico-popup-media");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private String chaveConteudo(String titulo, String mensagem) {
+        return normalizar(titulo) + "\u0000" + normalizarMensagem(mensagem);
+    }
+
+    private String normalizarMensagem(String mensagem) {
+        return normalizar(mensagem)
+                .replace("{{imagem}}", "")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private boolean semImagem(Popup popup) {
+        return popup == null || popup.getImagem() == null
+                || popup.getImagem().isBlank();
     }
 
     private void aplicarFiltros() {
@@ -419,160 +444,83 @@ public class HistoricoView {
     // ============================================================
 
     private VBox criarAvisoCard(Aviso aviso) {
+        String tema = temaHistorico(aviso);
+        VBox card = new VBox();
+        card.setMaxWidth(Double.MAX_VALUE);
+        card.getStyleClass().addAll(
+                "app-card", "history-card", "popup-library-card",
+                "popup-library-theme-" + tema);
 
-        VBox card = new VBox(10);
+        Region barra = new Region();
+        barra.getStyleClass().add("popup-library-topbar");
 
-        card.setPadding(
-                new Insets(18)
-        );
+        StackPane icone = new StackPane(
+                AppIcon.create(AppIcon.Type.BUILDING, 17));
+        icone.getStyleClass().add("popup-library-brand-icon");
 
-        card.setMaxWidth(
-                Double.MAX_VALUE
-        );
-        card.getStyleClass().add(\u0022history-card\u0022);
-
-        card.getStyleClass().add("app-card");
-
-        // --------------------------------------------------------
-        // TÍTULO
-        // --------------------------------------------------------
-
-        Label titulo = new Label(
-                valorOuPadrao(
-                        aviso.getTitulo(),
-                        "Sem título"
-                )
-        );
-
+        Label titulo = new Label(valorOuPadrao(
+                aviso.getTitulo(), "Sem título"));
         titulo.setWrapText(true);
-
-        titulo.setFont(
-                Font.font(
-                        "System",
-                        FontWeight.BOLD,
-                        17
-                )
-        );
-
-        titulo.setTextFill(
-                Color.web("#172B4D")
-        );
-        titulo.getStyleClass().add("history-item-title");
         titulo.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(titulo, Priority.ALWAYS);
+        titulo.getStyleClass().add("popup-library-title");
+
+        Label classificacao = new Label(
+                criticidadeExibida(aviso) + " · " + prioridadeExibida(aviso));
+        classificacao.getStyleClass().add("popup-library-badge");
+        VBox identificacao = new VBox(5, titulo, classificacao);
+        identificacao.setMinWidth(0);
+        HBox.setHgrow(identificacao, Priority.ALWAYS);
 
         Label tipoRegistro = new Label(
                 ehReabertura(aviso) ? "REABERTURA" : "PUBLICAÇÃO");
-        tipoRegistro.getStyleClass().addAll(
-                "history-type-badge",
-                ehReabertura(aviso)
-                        ? "history-type-reopened"
-                        : "history-type-published");
+        tipoRegistro.getStyleClass().add("history-library-kind");
 
-        String nivel = classificarTipo(aviso);
-        Label nivelRegistro = new Label(nivel.toUpperCase(Locale.ROOT));
-        nivelRegistro.getStyleClass().addAll(
-                "history-type-badge",
-                switch (nivel) {
-                    case "Crítico" -> "history-level-critical";
-                    case "Urgente" -> "history-level-urgent";
-                    case "Atenção" -> "history-level-attention";
-                    default -> "history-level-normal";
-                });
+        HBox cabecalho = new HBox(
+                12, icone, identificacao, tipoRegistro);
+        cabecalho.setAlignment(Pos.CENTER_LEFT);
+        cabecalho.getStyleClass().add("popup-library-header");
 
-        HBox topo = new HBox(10, titulo, nivelRegistro, tipoRegistro);
-        topo.setAlignment(Pos.CENTER_LEFT);
-
-        // --------------------------------------------------------
-        // MENSAGEM
-        // --------------------------------------------------------
-
-        Label mensagem = new Label(
-                valorOuPadrao(
-                        aviso.getMensagem(),
-                        ""
-                )
-        );
-
+        Label mensagem = new Label(valorOuPadrao(
+                aviso.getMensagem(), "Sem mensagem informada."));
         mensagem.setWrapText(true);
+        mensagem.setMaxWidth(Double.MAX_VALUE);
+        mensagem.getStyleClass().add("popup-library-message");
 
-        mensagem.setFont(
-                Font.font(
-                        "System",
-                        14
-                )
-        );
+        VBox conteudoMensagem = new VBox(9, mensagem);
+        conteudoMensagem.setMinWidth(0);
+        HBox.setHgrow(conteudoMensagem, Priority.ALWAYS);
+        Popup popupRelacionado = popupsPorConteudo.get(chaveConteudo(
+                aviso.getTitulo(), aviso.getMensagem()));
+        if (popupRelacionado != null
+                && PopupMediaView.ehImagem(
+                        popupRelacionado.getImagem(),
+                        popupRelacionado.getImagemMimeType())) {
+            conteudoMensagem.getChildren().add(PopupMediaView.criar(
+                    popupRelacionado.getImagem(), 360, 210,
+                    "popup-library-media"));
+        }
 
-        mensagem.setTextFill(
-                Color.web("#4B5563")
-        );
-        mensagem.getStyleClass().add("history-item-message");
+        StackPane alertaIcone = new StackPane(AppIcon.create(
+                "normal".equals(tema)
+                        ? AppIcon.Type.INFO : AppIcon.Type.WARNING,
+                18));
+        alertaIcone.getStyleClass().add("popup-library-alert-icon");
+        HBox mensagemBox = new HBox(12, alertaIcone, conteudoMensagem);
+        mensagemBox.setAlignment(Pos.TOP_LEFT);
+        mensagemBox.getStyleClass().add("popup-library-message-box");
 
-        // --------------------------------------------------------
-        // INFORMAÇÕES
-        // --------------------------------------------------------
+        String autor = valorOuPadrao(aviso.getAutor(), "Desconhecido");
+        Node autorCard = criarMetaHistorico(
+                AppIcon.Type.USERS, "AUTOR", autor);
+        HBox.setHgrow(autorCard, Priority.ALWAYS);
+        HBox metadados = new HBox(9, autorCard);
+        metadados.getStyleClass().add("popup-library-dates");
 
-        String autor = valorOuPadrao(
-                aviso.getAutor(),
-                "Desconhecido"
-        );
+        VBox corpo = new VBox(10, mensagemBox, metadados);
+        corpo.getStyleClass().add("popup-library-body");
 
-        String data = aviso.getDataPublicacao() == null
-                ? "Data desconhecida"
-                : aviso.getDataPublicacao()
-                .format(DATA_FORMATTER);
-
-        Label informacoes = new Label(
-                "Autor: " + autor
-                        + "  •  Publicado em: " + data
-        );
-
-        informacoes.setFont(
-                Font.font(
-                        "System",
-                        12
-                )
-        );
-
-        informacoes.setTextFill(
-                Color.web("#64748B")
-        );
-        informacoes.getStyleClass().add("history-item-info");
-
-        // --------------------------------------------------------
-        // ID
-        // --------------------------------------------------------
-
-        Label idLabel = new Label(
-                "ID: " + aviso.getId()
-        );
-
-        idLabel.setFont(
-                Font.font(
-                        "System",
-                        11
-                )
-        );
-
-        idLabel.setTextFill(
-                Color.web("#9CA3AF")
-        );
+        Label idLabel = new Label("ID: " + aviso.getId());
         idLabel.getStyleClass().add("history-item-id");
-
-        // --------------------------------------------------------
-        // BOTÃO
-        // --------------------------------------------------------
-
-        Button removerButton =
-                new Button("Remover");
-
-        removerButton.setPrefHeight(34);
-
-        removerButton.setGraphic(AppIcon.create(AppIcon.Type.TRASH, 15));
-        removerButton.getStyleClass().add(\u0022danger-button\u0022);
-        removerButton.setOnAction(
-                event -> confirmarRemocao(aviso)
-        );
 
         Button reabrirButton = new Button("Reabrir popup");
         reabrirButton.setPrefHeight(34);
@@ -581,34 +529,64 @@ public class HistoricoView {
         reabrirButton.setOnAction(
                 event -> confirmarReabertura(aviso, reabrirButton));
 
-        HBox rodape = new HBox(10);
-
-        rodape.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        Button removerButton = new Button("Remover");
+        removerButton.setPrefHeight(34);
+        removerButton.setGraphic(AppIcon.create(AppIcon.Type.TRASH, 15));
+        removerButton.getStyleClass().add("danger-button");
+        removerButton.setOnAction(event -> confirmarRemocao(aviso));
 
         Region espacador = new Region();
+        HBox.setHgrow(espacador, Priority.ALWAYS);
+        HBox rodape = new HBox(
+                9, idLabel, espacador, reabrirButton, removerButton);
+        rodape.setAlignment(Pos.CENTER_LEFT);
+        rodape.getStyleClass().add("popup-library-actions");
 
-        HBox.setHgrow(
-                espacador,
-                Priority.ALWAYS
-        );
-
-        rodape.getChildren().addAll(
-                idLabel,
-                espacador,
-                reabrirButton,
-                removerButton
-        );
-
-        card.getChildren().addAll(
-                topo,
-                mensagem,
-                informacoes,
-                rodape
-        );
-
+        card.getChildren().addAll(barra, cabecalho, corpo, rodape);
         return card;
+    }
+
+    private Node criarMetaHistorico(
+            AppIcon.Type tipo, String rotulo, String valor) {
+        StackPane icone = new StackPane(AppIcon.create(tipo, 14));
+        icone.getStyleClass().add("popup-library-date-icon");
+        Label titulo = new Label(rotulo);
+        titulo.getStyleClass().add("popup-library-date-label");
+        Label conteudo = new Label(valor);
+        conteudo.getStyleClass().add("popup-library-date-value");
+        VBox textos = new VBox(1, titulo, conteudo);
+        HBox card = new HBox(8, icone, textos);
+        card.setAlignment(Pos.CENTER_LEFT);
+        card.setMaxWidth(Double.MAX_VALUE);
+        card.getStyleClass().add("popup-library-date-card");
+        return card;
+    }
+
+    private String temaHistorico(Aviso aviso) {
+        return switch (classificarTipo(aviso)) {
+            case "Crítico" -> "critical";
+            case "Urgente" -> "high";
+            case "Atenção" -> "moderate";
+            default -> "normal";
+        };
+    }
+
+    private String criticidadeExibida(Aviso aviso) {
+        String valor = normalizar(aviso.getCriticidade());
+        if (valor.contains("critical") || valor.contains("critic")) return "Crítica";
+        if (valor.equals("high") || valor.equals("alta")) return "Alta";
+        if (valor.contains("moderate") || valor.contains("moderad")) return "Moderada";
+        if (valor.equals("low") || valor.equals("baixa")) return "Baixa";
+        return "Informativa";
+    }
+
+    private String prioridadeExibida(Aviso aviso) {
+        String valor = normalizar(aviso.getPrioridade());
+        if (valor.contains("immediate") || valor.contains("imediat")) return "Imediata";
+        if (valor.contains("urgent")) return "Urgente";
+        if (valor.equals("high") || valor.equals("alta")) return "Alta";
+        if (valor.equals("low") || valor.equals("baixa")) return "Baixa";
+        return "Normal";
     }
 
     // ============================================================
@@ -826,57 +804,6 @@ public class HistoricoView {
         }, "reabrir-popup-historico");
         thread.setDaemon(true);
         thread.start();
-    }
-
-    @Deprecated
-    private void confirmarRemocaoLegada(Aviso aviso) {
-
-        Alert alerta = new Alert(
-                Alert.AlertType.CONFIRMATION
-        );
-
-        alerta.setTitle(
-                "Remover aviso"
-        );
-
-        alerta.setHeaderText(
-                "Deseja remover este aviso?"
-        );
-
-        alerta.setContentText(
-                "O aviso \"" +
-                        valorOuPadrao(
-                                aviso.getTitulo(),
-                                "Sem título"
-                        )
-                        + "\" será removido do histórico."
-        );
-
-        ButtonType confirmar =
-                new ButtonType(
-                        "Remover",
-                        ButtonBar.ButtonData.OK_DONE
-                );
-
-        ButtonType cancelar =
-                new ButtonType(
-                        "Cancelar",
-                        ButtonBar.ButtonData.CANCEL_CLOSE
-                );
-
-        alerta.getButtonTypes().setAll(
-                confirmar,
-                cancelar
-        );
-
-        alerta.showAndWait().ifPresent(
-                resultado -> {
-
-                    if (resultado == confirmar) {
-                        remover(aviso);
-                    }
-                }
-        );
     }
 
     // ============================================================

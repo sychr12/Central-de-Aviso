@@ -9,7 +9,6 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
@@ -45,7 +44,6 @@ public class MensagemDoDiaView {
     private final VBox root = new VBox();
 
     private final TextArea mensagemArea = new TextArea();
-    private final CheckBox ativoCheckBox = new CheckBox("Exibir mensagem do dia");
     private final Label editorTitulo = new Label("Nova mensagem");
     private final Label editorDescricao = new Label(
             "Crie uma mensagem de destaque para os colaboradores.");
@@ -59,9 +57,6 @@ public class MensagemDoDiaView {
     private final ComboBox<String> quantidadeComboBox = new ComboBox<>();
     private final Label resumoLista = new Label();
     private final Label totalMensagensLabel = new Label("—");
-    private final Label previaMensagemLabel = new Label(
-            "Sua mensagem aparecerá aqui enquanto você escreve.");
-    private final Label previaEstadoLabel = new Label("PRONTA PARA EXIBIÇÃO");
     private final AtomicBoolean carregandoLista = new AtomicBoolean();
     private final List<String> mensagensCarregadas = new ArrayList<>();
     private String mensagemEmEdicao;
@@ -151,18 +146,7 @@ public class MensagemDoDiaView {
             int quantidade = atual == null ? 0 : atual.length();
             contadorCaracteres.setText(
                     quantidade == 1 ? "1 caractere" : quantidade + " caracteres");
-            String conteudo = atual == null ? "" : atual.trim();
-            previaMensagemLabel.setText(conteudo.isEmpty()
-                    ? "Sua mensagem aparecerá aqui enquanto você escreve."
-                    : conteudo);
         });
-
-        ativoCheckBox.setSelected(true);
-        ativoCheckBox.getStyleClass().add("message-visibility-toggle");
-        ativoCheckBox.selectedProperty().addListener((observavel, anterior, selecionado) ->
-                previaEstadoLabel.setText(selecionado
-                        ? "PRONTA PARA EXIBIÇÃO"
-                        : "MENSAGEM OCULTA"));
 
         salvarButton.setPrefHeight(40);
         salvarButton.getStyleClass().add("primary-button");
@@ -180,7 +164,7 @@ public class MensagemDoDiaView {
         Region espacoAcoes = new Region();
         HBox.setHgrow(espacoAcoes, Priority.ALWAYS);
         HBox botoes = new HBox(
-                10, ativoCheckBox, espacoAcoes, cancelarEdicaoButton, salvarButton);
+                10, espacoAcoes, cancelarEdicaoButton, salvarButton);
         botoes.setAlignment(Pos.CENTER_LEFT);
         botoes.getStyleClass().add("message-editor-actions");
 
@@ -205,57 +189,31 @@ public class MensagemDoDiaView {
 
         VBox editor = new VBox(
                 15, editorCabecalho, campoMensagem, botoes, statusLabel);
-        editor.getStyleClass().addAll(\u0022app-card\u0022, \u0022message-editor-panel\u0022);
+        editor.getStyleClass().addAll("app-card", "message-editor-panel");
         editor.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(editor, Priority.ALWAYS);
-
-        Label previaEyebrow = new Label("PRÉVIA AO VIVO");
-        previaEyebrow.getStyleClass().add("message-preview-eyebrow");
-        Label aspas = new Label("“");
-        aspas.getStyleClass().add("message-preview-quote");
-        previaMensagemLabel.setWrapText(true);
-        previaMensagemLabel.setMaxWidth(Double.MAX_VALUE);
-        previaMensagemLabel.getStyleClass().add("message-preview-text");
-        Region espacoPrevia = new Region();
-        VBox.setVgrow(espacoPrevia, Priority.ALWAYS);
-        StackPane estadoPonto = new StackPane();
-        estadoPonto.getStyleClass().add("message-preview-status-dot");
-        previaEstadoLabel.getStyleClass().add("message-preview-status-text");
-        HBox estadoPrevia = new HBox(7, estadoPonto, previaEstadoLabel);
-        estadoPrevia.setAlignment(Pos.CENTER_LEFT);
-        VBox previa = new VBox(
-                7, previaEyebrow, aspas, previaMensagemLabel, espacoPrevia, estadoPrevia);
-        previa.setMinWidth(235);
-        previa.setPrefWidth(285);
-        previa.setMaxWidth(320);
-        previa.getStyleClass().add("message-live-preview");
-
-        HBox areaCriacao = new HBox(18, editor, previa);
-        areaCriacao.setAlignment(Pos.TOP_LEFT);
-        areaCriacao.getStyleClass().add("message-compose-workspace");
 
         quantidadeComboBox.getItems().addAll(
-                \u002210\u0022, \u002250\u0022, \u0022100\u0022, \u0022Todas\u0022);
-        quantidadeComboBox.setValue(\u002210\u0022);
+                "10", "50", "100", "Todas");
+        quantidadeComboBox.setValue("10");
         quantidadeComboBox.setPrefWidth(105);
-        quantidadeComboBox.getStyleClass().add(\u0022message-limit-selector\u0022);
+        quantidadeComboBox.getStyleClass().add("message-limit-selector");
         quantidadeComboBox.setOnAction(event -> aplicarLimiteSelecionado());
-        resumoLista.getStyleClass().add(\u0022message-list-summary\u0022);
+        resumoLista.getStyleClass().add("message-list-summary");
 
-        Label exibirLabel = new Label(\u0022Exibir\u0022);
-        exibirLabel.getStyleClass().add(\u0022message-limit-label\u0022);
+        Label exibirLabel = new Label("Exibir");
+        exibirLabel.getStyleClass().add("message-limit-label");
         Region espaco = new Region();
         HBox.setHgrow(espaco, Priority.ALWAYS);
         HBox bibliotecaCabecalho = new HBox(
                 12, bibliotecaIdentidade, resumoLista, espaco, exibirLabel, quantidadeComboBox);
         bibliotecaCabecalho.setAlignment(Pos.CENTER_LEFT);
-        bibliotecaCabecalho.getStyleClass().add(\u0022message-list-header\u0022);
+        bibliotecaCabecalho.getStyleClass().add("message-list-header");
 
         configurarListaMensagens();
         VBox biblioteca = new VBox(10, bibliotecaCabecalho, listaMensagens);
-        biblioteca.getStyleClass().addAll(\u0022app-card\u0022, \u0022message-library-panel\u0022);
+        biblioteca.getStyleClass().addAll("app-card", "message-library-panel");
         biblioteca.setMaxWidth(Double.MAX_VALUE);
-        root.getChildren().addAll(hero, areaCriacao, biblioteca);
+        root.getChildren().addAll(hero, editor, biblioteca);
         carregarLista();
     }
 
@@ -392,7 +350,7 @@ public class MensagemDoDiaView {
 
     private int obterLimiteSelecionado() {
         String valor = quantidadeComboBox.getValue();
-        if (valor == null || \u0022Todas\u0022.equals(valor)) return Integer.MAX_VALUE;
+        if (valor == null || "Todas".equals(valor)) return Integer.MAX_VALUE;
         try {
             return Integer.parseInt(valor);
         } catch (NumberFormatException ignored) {
@@ -522,7 +480,6 @@ public class MensagemDoDiaView {
     private void resetarEditor() {
         mensagemEmEdicao = null;
         mensagemArea.clear();
-        ativoCheckBox.setSelected(true);
         atualizarModoEdicao();
     }
 

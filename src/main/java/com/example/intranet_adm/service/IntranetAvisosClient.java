@@ -5,7 +5,6 @@ import com.example.intranet_adm.model.Popup;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -658,6 +657,10 @@ public class IntranetAvisosClient {
             // A Intranet salva os anexos em /uploads/... e devolve esse caminho
             // relativo. A Central precisa de uma URL absoluta para conseguir
             // carregar a imagem no histórico e no popup.
+            String imagemMimeType = primeiroValor(
+                    extrairCampoTexto(objeto, "imageMimeType"),
+                    extrairCampoTexto(objeto, "mimeType"),
+                    null);
             String imagem = extrairCampoTexto(objeto, "imageUrl");
             if (imagem != null && imagem.startsWith("/")) {
                 imagem = baseUrl().replaceFirst("/+$", "") + imagem;
@@ -667,7 +670,7 @@ public class IntranetAvisosClient {
             }
             if (imagem == null) {
                 String base64 = extrairCampoTexto(objeto, "imageBase64");
-                String mime = extrairCampoTexto(objeto, "imageMimeType");
+                String mime = imagemMimeType;
                 if (mime == null || mime.isBlank()) mime = "image/png";
                 if (base64 != null && !base64.isBlank()) imagem = "data:" + mime + ";base64," + base64;
             }
@@ -686,6 +689,24 @@ public class IntranetAvisosClient {
                     paginas
             );
             popup.setImagem(imagem);
+            popup.setImagemMimeType(imagemMimeType);
+            popup.setCriticidade(primeiroValor(
+                    extrairCampoTexto(objeto, "criticality"),
+                    extrairCampoTexto(objeto, "criticidade"),
+                    "informative"));
+            popup.setPrioridade(primeiroValor(
+                    extrairCampoTexto(objeto, "priority"),
+                    extrairCampoTexto(objeto, "prioridade"),
+                    "normal"));
+            popup.setLink(primeiroValor(
+                    extrairCampoTexto(objeto, "link"),
+                    extrairCampoTexto(objeto, "url"),
+                    null));
+            popup.setDataPublicacao(primeiroValor(
+                    extrairCampoTexto(objeto, "publicationDate"),
+                    extrairCampoTexto(objeto, "createdAt"),
+                    null));
+            popup.setDataExpiracao(expirationDate);
             return popup;
 
         } catch (Exception error) {
@@ -1167,19 +1188,6 @@ public class IntranetAvisosClient {
     }
 
     private static String jsonEscape(String value) { return value.trim().replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n"); }
-
-    private static String detectarServidorLocal() {
-        String host = "localhost";
-        try { host = InetAddress.getLocalHost().getHostAddress(); } catch (Exception ignored) { }
-        for (int porta = 3005; porta >= 3000; porta--) {
-            for (String endereco : new String[]{"localhost", host}) try {
-                HttpRequest request = HttpRequest.newBuilder(URI.create("http://" + endereco + ":" + porta + "/api/avisos")).timeout(Duration.ofMillis(500)).GET().build();
-                HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-                if (response.statusCode() >= 200 && response.statusCode() < 500) return "http://" + endereco + ":" + porta;
-            } catch (Exception ignored) { }
-        }
-        return DEFAULT_BASE_URL;
-    }
 
     public static void configurarBaseUrl(
             String url

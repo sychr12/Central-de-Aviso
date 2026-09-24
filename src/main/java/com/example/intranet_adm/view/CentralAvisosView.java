@@ -96,7 +96,7 @@ public final class CentralAvisosView {
 
     private void configurarEstilos() {
         root.getStylesheets().add(getClass()
-                .getResource(\u0022/com/example/intranet_adm/redesign.css\u0022)
+                .getResource("/com/example/intranet_adm/redesign.css")
                 .toExternalForm());
 
         if (!root.getStyleClass().contains("central-root")) {
@@ -146,59 +146,6 @@ public final class CentralAvisosView {
     }
 
     // ============================================================
-    // CABEÇALHO
-    // ============================================================
-
-    private Node criarCabecalho() {
-
-        HBox bar =
-                new HBox();
-
-        bar.setAlignment(
-                Pos.CENTER_LEFT
-        );
-
-        bar.setSpacing(10);
-
-        bar.getStyleClass()
-                .add("central-topbar");
-
-        Label icone =
-                new Label("✦");
-
-        Label titulo =
-                new Label(
-                        "Central de Avisos - Enviar Popup"
-                );
-
-        titulo.getStyleClass()
-                .add("window-title");
-
-        Region spacer =
-                new Region();
-
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
-        );
-
-        Label controles =
-                new Label(
-                        "—     □     ×"
-                );
-
-        bar.getChildren()
-                .addAll(
-                        icone,
-                        titulo,
-                        spacer,
-                        controles
-                );
-
-        return bar;
-    }
-
-    // ============================================================
     // MENU LATERAL
     // ============================================================
 
@@ -224,7 +171,7 @@ public final class CentralAvisosView {
 
         HBox marca = new HBox(10, criarLogo(), criarIdentidade());
         marca.setAlignment(Pos.CENTER_LEFT);
-        marca.getStyleClass().add(\u0022central-brand-row\u0022);
+        marca.getStyleClass().add("central-brand-row");
 
         menu.getChildren().addAll(
                         marca,
@@ -266,8 +213,8 @@ public final class CentralAvisosView {
                         )
                 );
 
-        menu.getChildren().add(1, criarTituloSecao(\u0022COMUNICA\u00c7\u00c3O\u0022));
-        menu.getChildren().add(5, criarTituloSecao(\u0022ADMINISTRA\u00c7\u00c3O\u0022));
+        menu.getChildren().add(1, criarTituloSecao("COMUNICAÇÃO"));
+        menu.getChildren().add(5, criarTituloSecao("ADMINISTRAÇÃO"));
 
         Region spacer =
                 new Region();
@@ -309,7 +256,7 @@ public final class CentralAvisosView {
         logo.getStyleClass()
                 .add("central-logo");
 
-        logo.setText(\u0022\u0022);
+        logo.setText("");
         logo.setGraphic(AppIcon.create(AppIcon.Type.BELL, 21));
         logo.setAlignment(Pos.CENTER);
         logo.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
@@ -324,7 +271,7 @@ public final class CentralAvisosView {
     private VBox criarIdentidade() {
         Label titulo = new Label("CENTRAL\nComunicação interna");
         titulo.getStyleClass().add("central-brand");
-        titulo.setText(\u0022Central\nIntranet IDAM\u0022);
+        titulo.setText("Central\nIntranet IDAM");
         VBox identidade = new VBox(titulo);
         identidade.getStyleClass().add("brand-block");
         return identidade;
@@ -376,17 +323,17 @@ public final class CentralAvisosView {
 
     private Label criarTituloSecao(String texto) {
         Label titulo = new Label(texto);
-        titulo.getStyleClass().add(\u0022sidebar-section-title\u0022);
+        titulo.getStyleClass().add("sidebar-section-title");
         return titulo;
     }
 
     private AppIcon.Type iconeNavegacao(String rotulo) {
-        if (rotulo.contains(\u0022Novo\u0022)) return AppIcon.Type.PLUS;
-        if (rotulo.contains(\u0022Popups\u0022)) return AppIcon.Type.POPUP;
-        if (rotulo.contains(\u0022Hist\u00f3rico\u0022)) return AppIcon.Type.HISTORY;
-        if (rotulo.contains(\u0022Acessando\u0022)) return AppIcon.Type.USERS;
-        if (rotulo.contains(\u0022Mensagem\u0022)) return AppIcon.Type.MESSAGE;
-        if (rotulo.contains(\u0022Configura\u00e7\u00f5es\u0022)) return AppIcon.Type.SETTINGS;
+        if (rotulo.contains("Novo")) return AppIcon.Type.PLUS;
+        if (rotulo.contains("Popups")) return AppIcon.Type.POPUP;
+        if (rotulo.contains("Histórico")) return AppIcon.Type.HISTORY;
+        if (rotulo.contains("Acessando")) return AppIcon.Type.USERS;
+        if (rotulo.contains("Mensagem")) return AppIcon.Type.MESSAGE;
+        if (rotulo.contains("Configurações")) return AppIcon.Type.SETTINGS;
         return AppIcon.Type.LOGOUT;
     }
 
@@ -454,17 +401,17 @@ public final class CentralAvisosView {
         content.getChildren()
                 .clear();
 
-        String secao = titulo.equals(\u0022Configura\u00e7\u00f5es\u0022)
-                || titulo.equals(\u0022Acessando Agora\u0022)
-                ? \u0022Administra\u00e7\u00e3o\u0022 : \u0022Comunica\u00e7\u00e3o\u0022;
+        String secao = titulo.equals("Configurações")
+                || titulo.equals("Acessando Agora")
+                ? "Administração" : "Comunicação";
         HBox breadcrumb = new HBox(7,
-                new Label(\u0022Intranet\u0022),
-                new Label(\u0022/\u0022),
+                new Label("Intranet"),
+                new Label("/"),
                 new Label(secao),
-                new Label(\u0022/\u0022),
+                new Label("/"),
                 new Label(titulo));
         breadcrumb.setAlignment(Pos.CENTER_LEFT);
-        breadcrumb.getStyleClass().add(\u0022breadcrumb\u0022);
+        breadcrumb.getStyleClass().add("breadcrumb");
 
         Label cabecalho =
                 new Label(titulo);
